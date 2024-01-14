@@ -94,6 +94,16 @@ id id0(
     .reg1_addr_o(reg1_addr),
     .reg2_addr_o(reg2_addr),
 
+    // 处于执行阶段的指令的运算结果
+    .ex_wreg_i(ex_wreg_o),
+    .ex_wdata_i(ex_wdata_o), 
+    .ex_wd_i(ex_wd_o),
+
+    // 处于访存阶段的指令的运算结果
+    .mem_wreg_i(mem_wreg_o), 
+    .mem_wdata_i(mem_wdata_o), 
+    .mem_wd_i(mem_wdata_o), 
+
     // 送到 ID/EX 模块的信息
     .aluop_o(id_aluop_o),
     .alusel_o(id_alusel_o),
