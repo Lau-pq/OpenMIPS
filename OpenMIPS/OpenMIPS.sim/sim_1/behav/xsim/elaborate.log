@@ -3,7 +3,6 @@ Copyright 1986-1999, 2001-2018 Xilinx, Inc. All Rights Reserved.
 Running: D:/software/Xilinx/Vivado/2018.3/bin/unwrapped/win64.o/xelab.exe -wto 914ec505e53049c59dab08d1313e6012 --incr --debug typical --relax --mt 2 -L xil_defaultlib -L unisims_ver -L unimacro_ver -L secureip --snapshot openmips_min_sopc_tb_behav xil_defaultlib.openmips_min_sopc_tb xil_defaultlib.glbl -log elaborate.log 
 Using 2 slave threads.
 Starting static elaboration
-WARNING: [VRFC 10-3091] actual bit length 32 differs from formal bit length 5 for port 'mem_wd_i' [E:/competition/Loongson/OpenMIPS/openmips.v:105]
 Completed static elaboration
 Starting simulation data flow analysis
 WARNING: [XSIM 43-4099] "E:/competition/Loongson/OpenMIPS/openmips_min_sopc.v" Line 3. Module openmips_min_sopc doesn't have a timescale but at least one module in design has a timescale.

@@ -2,8 +2,8 @@
 # Webtalk v2018.3 (64-bit)
 # SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
 # IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
-# Start of session at: Mon Jan 15 11:12:11 2024
-# Process ID: 29864
+# Start of session at: Sat Jan 13 19:26:40 2024
+# Process ID: 12500
 # Current directory: E:/competition/Loongson/OpenMIPS/OpenMIPS/OpenMIPS.sim/sim_1/behav/xsim
 # Command line: wbtcv.exe -mode batch -source E:/competition/Loongson/OpenMIPS/OpenMIPS/OpenMIPS.sim/sim_1/behav/xsim/xsim.dir/openmips_min_sopc_tb_behav/webtalk/xsim_webtalk.tcl -notrace
 # Log file: E:/competition/Loongson/OpenMIPS/OpenMIPS/OpenMIPS.sim/sim_1/behav/xsim/webtalk.log

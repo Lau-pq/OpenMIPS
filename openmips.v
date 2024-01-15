@@ -4,8 +4,8 @@ module openmips(
     input wire clk, // 时钟信号
     input wire rst, // 复位信号
     
-    input wire[`RegBus] rom_data_i, // 从指令存储器取得的指令
-    output wire[`RegBus] rom_addr_o, // 输出到指令存储器的地址
+    input wire[`InstBus] rom_data_i, // 从指令存储器取得的指令
+    output wire[`InstAddrBus] rom_addr_o, // 输出到指令存储器的地址
     output wire rom_ce_o // 指令存储器使能信号
 );
 
@@ -88,12 +88,6 @@ id id0(
     .reg1_data_i(reg1_data), 
     .reg2_data_i(reg2_data), 
 
-    // 送到 Regfile 模块的信息
-    .reg1_read_o(reg1_read), 
-    .reg2_read_o(reg2_read), 
-    .reg1_addr_o(reg1_addr),
-    .reg2_addr_o(reg2_addr),
-
     // 处于执行阶段的指令的运算结果
     .ex_wreg_i(ex_wreg_o),
     .ex_wdata_i(ex_wdata_o), 
@@ -102,7 +96,13 @@ id id0(
     // 处于访存阶段的指令的运算结果
     .mem_wreg_i(mem_wreg_o), 
     .mem_wdata_i(mem_wdata_o), 
-    .mem_wd_i(mem_wdata_o), 
+    .mem_wd_i(mem_wd_o), 
+
+    // 送到 Regfile 模块的信息
+    .reg1_read_o(reg1_read), 
+    .reg2_read_o(reg2_read), 
+    .reg1_addr_o(reg1_addr),
+    .reg2_addr_o(reg2_addr),
 
     // 送到 ID/EX 模块的信息
     .aluop_o(id_aluop_o),

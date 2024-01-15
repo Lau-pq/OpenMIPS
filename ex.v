@@ -15,21 +15,53 @@ module ex(
     output reg[`RegBus] wdata_o // 执行阶段的指令最终要写入目的寄存器的值
 );
 
-// 保存逻辑运算的结果
-reg[`RegBus] logicout;
+reg[`RegBus] logicout; // 保存逻辑运算的结果
+reg[`RegBus] shiftres; // 保存移位运算的结果
 
 // ********** 第一段：依据 aluop_i 指示的运算子类型进行运算 *************
+// 进行逻辑运算
 always @( *) begin
     if (rst == `RstEnable) begin
         logicout <= `ZeroWord;
     end else begin
         case (aluop_i)
-            `EXE_OR_OP: begin
+            `EXE_OR_OP: begin // 逻辑或运算
                 logicout <= reg1_i | reg2_i;
+            end
+            `EXE_AND_OP: begin // 逻辑与运算
+                logicout <= reg1_i & reg2_i;
+            end
+            `EXE_NOR_OP: begin // 逻辑或非运算
+               logicout <= ~(reg1_i | reg2_i);
+            end
+            `EXE_XOR_OP: begin // 逻辑异或运算
+                logicout <= reg1_i ^ reg2_i;
             end
             default: begin
                 logicout <= `ZeroWord;
             end
+        endcase
+    end
+end
+
+// 进行移位运算
+always @( *) begin
+    if (rst == `RstEnable) begin
+        shiftres <= `ZeroWord;
+    end else begin
+        case (aluop_i)
+            `EXE_SLL_OP: begin // 逻辑左移
+                shiftres <= reg2_i << reg1_i[4:0];
+            end
+            `EXE_SRL_OP: begin // 逻辑右移
+                shiftres <= reg2_i >> reg1_i[4:0];
+            end
+            `EXE_SRA_OP: begin // 算术右移
+                shiftres <= ({32{reg2_i[31]}} << (6'd32 - {1'b0, reg1_i[4:0]})) | reg2_i >> reg1_i[4:0];
+            end
+            default: begin
+                shiftres <= `ZeroWord;
+            end   
         endcase
     end
 end
@@ -40,7 +72,10 @@ always @( *) begin
     wreg_o <= wreg_i; // wreg_o 等于 wreg_i，表示是否要写目的寄存器
     case (alusel_i)
         `EXE_RES_LOGIC: begin
-            wdata_o <= logicout; // wdata_o 中存放运算结果
+            wdata_o <= logicout; // 选择逻辑运算结果为最终运算结果
+        end
+        `EXE_RES_SHIFT: begin
+            wdata_o <= shiftres; // 选择移位运算结果为最终运算结果
         end
         default: begin
             wdata_o <= `ZeroWord;

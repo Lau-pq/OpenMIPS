@@ -37,9 +37,11 @@ module id(
 // 取得指令的指令码，功能码
 // 对于 ori 指令只需通过判断第 26-31 bit的值，即可判断是否是 ori 指令
 wire[5:0] op = inst_i[31:26]; // op
-wire[4:0] op2 = inst_i[10:6]; // R shamt
-wire[5:0] op3 = inst_i[5:0]; // R func
-wire[4:0] op4 = inst_i[20:16]; // rt
+wire[4:0] shamt = inst_i[10:6]; // R shamt
+wire[5:0] func = inst_i[5:0]; // R func
+wire[4:0] rs = inst_i[25:21]; // rs
+wire[4:0] rt = inst_i[20:16]; // rt
+wire[4:0] rd = inst_i[15:11]; // rd
 
 // 保存指令执行需要的立即数
 reg[`RegBus] imm;
@@ -55,52 +57,182 @@ always @( *) begin
         wd_o <= `NOPRegAddr;
         wreg_o <= `WriteDisable;
         instvalid <= `InstValid;
-        reg1_read_o <= 1'b0;
-        reg2_read_o <= 1'b0;
+        reg1_read_o <= `ReadDisable;
+        reg2_read_o <= `ReadDisable;
         reg1_addr_o <= `NOPRegAddr;
         reg2_addr_o <= `NOPRegAddr;
         imm <= `ZeroWord;
     end else begin
         aluop_o <= `EXE_NOP_OP;
         alusel_o <= `EXE_RES_NOP;
-        wd_o <= inst_i[15:11]; // rd
+        wd_o <= rd; // rd
         wreg_o <= `WriteDisable;
         instvalid <= `InstInvalid;
-        reg1_read_o <= 1'b0;
-        reg2_read_o <= 1'b0;
-        reg1_addr_o <= inst_i[25:21]; // rs 默认通过 Regfile 读端口1 读取的寄存器地址
-        reg2_addr_o <= inst_i[20:16]; // rt 默认通过 Regfile 读端口2 读取的寄存器地址
+        reg1_read_o <= `ReadDisable;
+        reg2_read_o <= `ReadDisable;
+        reg1_addr_o <= rs; // rs 默认通过 Regfile 读端口1 读取的寄存器地址
+        reg2_addr_o <= rt; // rt 默认通过 Regfile 读端口2 读取的寄存器地址
         imm <= `ZeroWord;
 
         case (op)
-            `EXE_ORI: begin // 根据 op 值判断是否是 ori 指令
-                // ori 指令需要将结果写入目的寄存器，所以 wreg_o 为 WriteEnable
+            `EXE_SPECIAL_INST: begin
+                case (shamt)
+                    5'b00000: begin
+                        case (func)
+                            `EXE_OR: begin // or 指令
+                                wreg_o <= `WriteEnable;
+                                aluop_o <= `EXE_OR_OP;
+                                alusel_o <= `EXE_RES_LOGIC;
+                                reg1_read_o <= `ReadEnable;
+                                reg2_read_o <= `ReadEnable;
+                                instvalid <= `InstValid;
+                            end
+                            `EXE_AND: begin // and 指令
+                                wreg_o <= `WriteEnable;
+                                aluop_o <= `EXE_AND_OP;
+                                alusel_o <= `EXE_RES_LOGIC;
+                                reg1_read_o <= `ReadEnable; 
+                                reg2_read_o <= `ReadEnable;
+                                instvalid <= `InstValid;
+                            end
+                            `EXE_XOR: begin // xor 指令
+                                wreg_o <= `WriteEnable;
+                                aluop_o <= `EXE_XOR_OP;
+                                alusel_o <= `EXE_RES_LOGIC;
+                                reg1_read_o <= `ReadEnable;
+                                reg2_read_o <= `ReadEnable;
+                                instvalid <= `InstValid;
+                            end
+                            `EXE_NOR: begin // nor 指令
+                                wreg_o <= `WriteEnable;
+                                aluop_o <= `EXE_NOR_OP;
+                                alusel_o <= `EXE_RES_LOGIC;
+                                reg1_read_o <= `ReadEnable;
+                                reg2_read_o <= `ReadEnable;
+                                instvalid <= `InstValid;
+                            end
+                            `EXE_SLLV: begin // sllv 指令
+                                wreg_o <= `WriteEnable;
+                                aluop_o <= `EXE_SLL_OP;
+                                alusel_o <= `EXE_RES_SHIFT;
+                                reg1_read_o <= `ReadEnable;
+                                reg2_read_o <= `ReadEnable;
+                                instvalid <= `InstValid;
+                            end
+                            `EXE_SRLV: begin // srlv 指令
+                                wreg_o <= `WriteEnable;
+                                aluop_o <= `EXE_SRL_OP;
+                                alusel_o <= `EXE_RES_SHIFT;
+                                reg1_read_o <= `ReadEnable;
+                                reg2_read_o <= `ReadEnable;
+                                instvalid <= `InstValid;
+                            end
+                            `EXE_SRAV: begin // srav 指令
+                                wreg_o <= `WriteEnable;
+                                aluop_o <= `EXE_SRA_OP;
+                                alusel_o <= `EXE_RES_SHIFT;
+                                reg1_read_o <= `ReadEnable;
+                                reg2_read_o <= `ReadEnable;
+                                instvalid <= `InstValid;
+                            end
+                            `EXE_SYNC: begin // sync 指令
+                                wreg_o <= `WriteEnable;
+                                aluop_o <= `EXE_NOP_OP;
+                                alusel_o <= `EXE_RES_NOP;
+                                reg1_read_o <= `ReadDisable;
+                                reg2_read_o <= `ReadEnable;
+                                instvalid <= `InstValid;
+                            end
+                            default: begin
+                            end  
+                        endcase
+                    end
+                    default: begin
+                    end  
+                endcase
+            end
+            `EXE_ORI: begin // ori 指令
                 wreg_o <= `WriteEnable;
-
-                // 运算的子类型是逻辑 “或” 运算
                 aluop_o <= `EXE_OR_OP;
-
-                // 运算类型是逻辑运算
                 alusel_o <= `EXE_RES_LOGIC;
-
-                // 需要通过 Regfile 的读端口1 读取寄存器
-                reg1_read_o <= 1'b1;
-
-                // 不需要通过 Regfile 的读端口2 读取寄存器
-                reg2_read_o <= 1'b0;
-
-                // 指令执行需要的立即数
-                imm <= {16'h0, inst_i[15:0]}; // 立即数无符号扩展
-
-                // 指令执行要写的目的寄存器地址
-                wd_o <= inst_i[20:16]; // rt
-
-                // ori 指令是有效指令
+                reg1_read_o <= `ReadEnable;
+                reg2_read_o <= `ReadDisable;
+                imm <= {16'h0, inst_i[15:0]};
+                wd_o <= rt;
+                instvalid <= `InstValid; 
+            end
+            `EXE_ANDI: begin // andi 指令
+                wreg_o <= `WriteEnable;
+                aluop_o <= `EXE_AND_OP;
+                alusel_o <= `EXE_RES_LOGIC;
+                reg1_read_o <= `ReadEnable;
+                reg2_read_o <= `ReadDisable;
+                imm <= {16'h0, inst_i[15:0]};
+                wd_o <= rt;
+                instvalid <= `InstValid;
+            end
+            `EXE_XORI: begin // xori 指令
+                wreg_o <= `WriteEnable;
+                aluop_o <= `EXE_XOR_OP;
+                alusel_o <= `EXE_RES_LOGIC;
+                reg1_read_o <= `ReadEnable;
+                reg2_read_o <= `ReadDisable;
+                imm <= {16'h0, inst_i[15:0]};
+                wd_o <= rt;
+                instvalid <= `InstValid;
+            end
+            `EXE_LUI: begin // lui 指令
+                wreg_o <= `WriteEnable;
+                aluop_o <= `EXE_OR_OP;
+                alusel_o <= `EXE_RES_LOGIC;
+                reg1_read_o <= `ReadEnable;
+                reg2_read_o <= `ReadDisable;
+                imm <= {inst_i[15:0], 16'h0};
+                wd_o <= rt;
+                instvalid <= `InstValid;
+            end
+            `EXE_PREF: begin // pref 指令
+                wreg_o <= `WriteDisable;
+                aluop_o <= `EXE_NOP_OP;
+                alusel_o <= `EXE_RES_NOP;
+                reg1_read_o <= `ReadDisable;
+                reg2_read_o <= `ReadDisable;
                 instvalid <= `InstValid;
             end
             default: begin
             end
         endcase
+
+        if (inst_i[31:21] == 11'b000_0000_0000) begin
+            if (func == `EXE_SLL) begin // sll 指令
+                wreg_o <= `WriteEnable;
+                aluop_o <= `EXE_SLL_OP;
+                alusel_o <= `EXE_RES_SHIFT;
+                reg1_read_o <= `ReadDisable;
+                reg2_read_o <= `ReadEnable;
+                imm[4:0] <= shamt;
+                wd_o <= rd;
+                instvalid <= `InstValid;
+            end else if (func == `EXE_SRL) begin // srl 指令
+                wreg_o <= `WriteEnable;
+                aluop_o <= `EXE_SRL_OP;
+                alusel_o <= `EXE_RES_SHIFT;
+                reg1_read_o <= `ReadDisable;
+                reg2_read_o <= `ReadEnable;
+                imm[4:0] <= shamt;
+                wd_o <= rd;
+                instvalid <= `InstValid;
+            end else if (func == `EXE_SRA) begin // sra 指令
+                wreg_o <= `WriteEnable;
+                aluop_o <= `EXE_SRA_OP;
+                alusel_o <= `EXE_RES_SHIFT;
+                reg1_read_o <= `ReadDisable;
+                reg2_read_o <= `ReadEnable;
+                imm[4:0] <= shamt;
+                wd_o <= rd;
+                instvalid <= `InstValid;
+            end
+        end
     end
 end
 
@@ -124,7 +256,8 @@ always @( *) begin
     end
 end
 
-// ******************* 第三段：确定进行运算的源操作数 2 *****************************8
+// ******************* 第三段：确定进行运算的源操作数 2 *****************************
+// 增加了两种情况
 always @( *) begin
     if (rst == `RstEnable) begin
         reg2_o <= `ZeroWord;
