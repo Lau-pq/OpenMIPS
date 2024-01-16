@@ -2,6 +2,8 @@ INFO: [VRFC 10-2263] Analyzing Verilog file "E:/competition/Loongson/OpenMIPS/ex
 INFO: [VRFC 10-311] analyzing module ex
 INFO: [VRFC 10-2263] Analyzing Verilog file "E:/competition/Loongson/OpenMIPS/ex_mem.v" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module ex_mem
+INFO: [VRFC 10-2263] Analyzing Verilog file "E:/competition/Loongson/OpenMIPS/hilo_reg.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module hilo_reg
 INFO: [VRFC 10-2263] Analyzing Verilog file "E:/competition/Loongson/OpenMIPS/id.v" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module id
 INFO: [VRFC 10-2263] Analyzing Verilog file "E:/competition/Loongson/OpenMIPS/id_ex.v" into library xil_defaultlib

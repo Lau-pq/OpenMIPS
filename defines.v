@@ -34,6 +34,13 @@
 `define EXE_SRA 6'b000011 // 指令 sra 的功能码
 `define EXE_SRAV 6'b000111 // 指令 srav 的功能码
 
+`define EXE_MOVZ 6'b001010 // 指令 movz 的功能码
+`define EXE_MOVN 6'b001011 // 指令 movn 的功能码
+`define EXE_MFHI 6'b010000 // 指令 mfhi 的功能码
+`define EXE_MTHI 6'b010001 // 指令 mthi 的功能码
+`define EXE_MFLO 6'b010010 // 指令 mflo 的功能码
+`define EXE_MTLO 6'b010011 // 指令 mtlo 的功能码
+
 `define EXE_SYNC 6'b001111 // 指令 syne 的功能码
 `define EXE_PREF 6'b110011 // 指令 pref 的指令码
 `define EXE_SPECIAL_INST 6'b000000 // SPECIAL 指令的指令码
@@ -48,11 +55,19 @@
 `define EXE_SRL_OP 8'b0000_0010
 `define EXE_SRA_OP 8'b0000_0011
 
+`define EXE_MOVZ_OP  8'b0000_1010
+`define EXE_MOVN_OP  8'b0000_1011
+`define EXE_MFHI_OP  8'b0001_0000
+`define EXE_MTHI_OP  8'b0001_0001
+`define EXE_MFLO_OP  8'b0001_0010
+`define EXE_MTLO_OP  8'b0001_0011
+
 `define EXE_NOP_OP 8'b0000_0000
 
 // AluSel
 `define EXE_RES_LOGIC 3'b001
 `define EXE_RES_SHIFT 3'b010
+`define EXE_RES_MOVE 3'b011	
 
 `define EXE_RES_NOP 3'b000
 

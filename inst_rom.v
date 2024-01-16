@@ -11,7 +11,8 @@ reg[`InstBus] inst_mem[0:`InstMemNum-1];
 
 // 使用文件 inst_rom.data 初始化指令存储器
 initial begin
-    $readmemh ("E:/competition/Loongson/OpenMIPS/inst_rom.data", inst_mem); 
+    // 给出绝对路径 注意 “/” 
+    $readmemh ("E:/competition/Loongson/OpenMIPS/data/inst_rom6.data", inst_mem); 
 end
 
 // 当复位信号无效时，依据输入的地址，给出指令存储器 ROM 中对应的元素
