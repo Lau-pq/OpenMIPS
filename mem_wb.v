@@ -12,6 +12,9 @@ module mem_wb(
     input wire[`RegBus] mem_lo, // 访存阶段的指令要写入 LO 寄存器的值
     input wire mem_whilo, // 访存阶段的指令是否要写 HI、LO寄存器    
 
+    // 来自控制模块的信息
+    input wire[`StallBus] stall, 
+
     // 送到回写阶段的信息
     output reg[`RegAddrBus] wb_wd, // 回写阶段的指令要写入的目的寄存器地址
     output reg wb_wreg, // 回写阶段的指令是否有要写入的目的寄存器
@@ -29,7 +32,14 @@ always @(posedge clk) begin
         wb_hi <= `ZeroWord;
         wb_lo <= `ZeroWord;
         wb_whilo <= `WriteDisable;
-    end else begin
+    end else if ((stall[4] == `Stop) && (stall[5] == `NoStop)) begin // 访存暂停 回写继续 空指令
+        wb_wd <= `NOPRegAddr;
+        wb_wreg <= `WriteDisable;
+        wb_wdata <= `ZeroWord;
+        wb_hi <= `ZeroWord;
+        wb_lo <= `ZeroWord;
+        wb_whilo <= `WriteDisable;
+    end else if (stall[4] == `NoStop) begin // 访存继续
         wb_wd <= mem_wd;
         wb_wreg <= mem_wreg;
         wb_wdata <= mem_wdata;

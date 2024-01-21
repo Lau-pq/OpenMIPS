@@ -74,10 +74,16 @@ wire[`RegAddrBus] reg2_addr;
 wire[`RegBus] hi;
 wire[`RegBus] lo;
 
+// 与流水线暂停相关的变量
+wire[`StallBus] stall;
+wire stallreq_from_id;	
+wire stallreq_from_ex;
+
 // pc_reg 例化
 pc_reg pc_reg0(
     .clk(clk),
     .rst(rst),
+    .stall(stall), 
     .pc(pc), 
     .ce(rom_ce_o)
 ); 
@@ -88,6 +94,7 @@ assign rom_addr_o = pc; // 指令存储器的输入地址就是 pc 的值
 if_id if_id0(
     .clk(clk),
     .rst(rst),
+    .stall(stall), 
     .if_pc(pc),
     .if_inst(rom_data_i),
     .id_pc(id_pc_i),
@@ -126,7 +133,10 @@ id id0(
     .reg1_o(id_reg1_o), 
     .reg2_o(id_reg2_o), 
     .wd_o(id_wd_o), 
-    .wreg_o(id_wreg_o)
+    .wreg_o(id_wreg_o),
+
+    // 送到 ctrl 模块的信息
+    .stallreq(stallreq_from_id)
 );
 
 // 通用寄存器 Regfile 模块例化
@@ -148,7 +158,8 @@ regfile regfile1(
 id_ex id_ex0(
     .clk(clk), 
     .rst(rst), 
-    
+    .stall(stall),
+
     // 从译码阶段 ID 模块传递过来的信息
     .id_aluop(id_aluop_o), 
     .id_alusel(id_alusel_o), 
@@ -194,13 +205,17 @@ ex ex0(
 
     .hi_o(ex_hi_o), 
     .lo_o(ex_lo_o), 
-    .whilo_o(ex_whilo_o)
+    .whilo_o(ex_whilo_o), 
+
+    // 送到 ctrl 模块的信息
+    .stallreq(stallreq_from_ex)
 );
 
 // EX/MEM 模块例化
 ex_mem ex_mem0(
     .clk(clk), 
     .rst(rst), 
+    .stall(stall), 
 
     // 来自执行阶段 EX 模块的信息
     .ex_wd(ex_wd_o), 
@@ -244,6 +259,7 @@ mem mem0(
 mem_wb mem_wb0(
     .clk(clk), 
     .rst(rst), 
+    .stall(stall), 
 
     // 来自访存阶段 MEM 模块的信息
     .mem_wd(mem_wd_o), 
@@ -274,6 +290,13 @@ hilo_reg hilo_reg0(
     // 读端口
     .hi_o(hi), 
     .lo_o(lo)
+);
+
+ctrl ctrl0(
+    .rst(rst), 
+    .stallreq_from_id(stallreq_from_id), 
+    .stallreq_from_ex(stallreq_from_ex), 
+    .stall(stall)
 );
 
 endmodule

@@ -128,3 +128,8 @@
 `define RegNum 32 // 通用寄存器的数量
 `define RegNumLog2 5 // 寻址通用寄存器使用的地址位数
 `define NOPRegAddr 5'b00000
+
+// *********************** 与流水线暂停有关的宏定义 ***********************
+`define Stop 1'b1 // 流水线暂停
+`define NoStop 1'b0 // 流水线继续
+`define StallBus 5:0 // 控制信号宽度

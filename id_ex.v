@@ -12,6 +12,9 @@ module id_ex(
     input wire[`RegAddrBus] id_wd,
     input wire id_wreg,
 
+    // 来自控制模块的信息
+    input wire[`StallBus] stall,  
+
     // 传递到执行阶段的信息
     output reg[`AluOpBus] ex_aluop, 
     output reg[`AluSelBus] ex_alusel, 
@@ -29,7 +32,14 @@ always @(posedge clk) begin
         ex_reg2 <= `ZeroWord;
         ex_wd <= `NOPRegAddr;
         ex_wreg <= `WriteDisable;
-    end else begin
+    end else if ((stall[2] == `Stop) && (stall[3] == `NoStop)) begin // 译码暂停 执行继续 空指令
+        ex_aluop <= `EXE_NOP_OP;
+        ex_alusel <= `EXE_RES_NOP;
+        ex_reg1 <= `ZeroWord;
+        ex_reg2 <= `ZeroWord;
+        ex_wd <= `NOPRegAddr;
+        ex_wreg <= `WriteDisable;
+    end else if (stall[2] == `NoStop) begin // 译码继续
         ex_aluop <= id_aluop;
         ex_alusel <= id_alusel;
         ex_reg1 <= id_reg1;

@@ -31,7 +31,9 @@ module id(
     output reg[`RegBus] reg1_o,// 译码阶段的指令要进行的运算的源操作数 1
     output reg[`RegBus] reg2_o, // 译码阶段的指令要进行的运算的源操作数 2
     output reg[`RegAddrBus] wd_o, // 译码阶段的指令要写入的目的寄存器地址
-    output reg wreg_o // 译码阶段的指令是否有要写入的目的寄存器
+    output reg wreg_o,  // 译码阶段的指令是否有要写入的目的寄存器
+
+    output wire stallreq // 流水线是否需要暂停
 );
 
 // 取得指令的指令码，功能码
@@ -48,6 +50,9 @@ reg[`RegBus] imm;
 
 // 指示指令是否有效
 reg instvalid;
+
+// 流水线是否需要暂停
+assign stallreq = `NoStop;
 
 // *************** 第一段：对指令进行译码 ***********************
 always @( *) begin

@@ -31,7 +31,9 @@ module ex(
     // 执行的结果
     output reg[`RegAddrBus] wd_o, // 执行阶段的指令最终要写入的目的寄存器地址
     output reg wreg_o, // 执行阶段的指令最终是否有要写入的目的寄存器
-    output reg[`RegBus] wdata_o // 执行阶段的指令最终要写入目的寄存器的值
+    output reg[`RegBus] wdata_o, // 执行阶段的指令最终要写入目的寄存器的值
+
+    output reg stallreg // 流实现是否暂停
 );
 
 reg[`RegBus] logicout; // 保存逻辑运算的结果
