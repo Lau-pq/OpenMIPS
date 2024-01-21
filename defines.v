@@ -41,9 +41,32 @@
 `define EXE_MFLO 6'b010010 // 指令 mflo 的功能码
 `define EXE_MTLO 6'b010011 // 指令 mtlo 的功能码
 
-`define EXE_SYNC 6'b001111 // 指令 syne 的功能码
+`define EXE_ADD 6'b100000 // 指令 add 的功能码
+`define EXE_ADDU 6'b100001 // 指令 addu 的功能码
+`define EXE_SUB 6'b100010 // 指令 sub 的功能码
+`define EXE_SUBU 6'b100011 // 指令 subu 的功能码
+`define EXE_SLT 6'b101010 // 指令 slt 的功能码
+`define EXE_SLTU 6'b101011 // 指令 sltu 的功能码
+
+`define EXE_ADDI 6'b001000 // 指令 addi 的指令码
+`define EXE_ADDIU 6'b001001 // 指令 addiu 的指令码
+`define EXE_SLTI 6'b001010 // 指令 slti 的指令码
+`define EXE_SLTIU 6'b001011 // 指令 sltiu 的指令码
+
+`define EXE_CLO 6'b100001 // 指令 clo 的功能码
+`define EXE_CLZ 6'b100000 // 指令 clz 的功能码
+
+`define EXE_MUL 6'b000010 // 指令 mul 的功能码
+`define EXE_MULT 6'b011000 // 指令码 mult 的功能码
+`define EXE_MULTU 6'b011001 // 指令 multu 的功能码
+
+`define EXE_SYNC 6'b001111 // 指令 sync 的功能码
 `define EXE_PREF 6'b110011 // 指令 pref 的指令码
+
 `define EXE_SPECIAL_INST 6'b000000 // SPECIAL 指令的指令码
+`define EXE_SPECIAL2_INST 6'b011100 // SPECIAL2 指令的指令码
+`define EXE_REGIMM_INST 6'b000001 // REGIMM 指令的指令码
+
 
 // AluOp
 `define EXE_AND_OP 8'b0010_0100
@@ -62,12 +85,29 @@
 `define EXE_MFLO_OP  8'b0001_0010
 `define EXE_MTLO_OP  8'b0001_0011
 
+`define EXE_SLT_OP  8'b00101010
+`define EXE_SLTU_OP  8'b00101011
+`define EXE_ADD_OP  8'b00100000
+`define EXE_ADDU_OP  8'b00100001
+`define EXE_SUB_OP  8'b00100010
+`define EXE_SUBU_OP  8'b00100011
+`define EXE_ADDI_OP  8'b01010101
+`define EXE_ADDIU_OP  8'b01010110
+`define EXE_CLZ_OP  8'b10110000
+`define EXE_CLO_OP  8'b10110001
+
+`define EXE_MULT_OP  8'b00011000
+`define EXE_MULTU_OP  8'b00011001
+`define EXE_MUL_OP  8'b10101001
+
 `define EXE_NOP_OP 8'b0000_0000
 
 // AluSel
 `define EXE_RES_LOGIC 3'b001
 `define EXE_RES_SHIFT 3'b010
 `define EXE_RES_MOVE 3'b011	
+`define EXE_RES_ARITHMETIC 3'b100	
+`define EXE_RES_MUL 3'b101
 
 `define EXE_RES_NOP 3'b000
 

@@ -199,6 +199,68 @@ always @( *) begin
                                     wreg_o <= `WriteDisable;
                                 end
                             end
+                            `EXE_SLT: begin // slt 指令
+                                wreg_o <= `WriteEnable;
+                                aluop_o <= `EXE_SLT_OP;
+                                alusel_o <= `EXE_RES_ARITHMETIC;
+                                reg1_read_o <= `ReadEnable;
+                                reg2_read_o <= `ReadEnable;
+                                instvalid <= `InstValid;
+                            end
+                            `EXE_SLTU: begin // sltu 指令
+                                wreg_o <= `WriteEnable;
+                                aluop_o <= `EXE_SLTU_OP;
+                                alusel_o <= `EXE_RES_ARITHMETIC;
+                                reg1_read_o <= `ReadEnable;
+                                reg2_read_o <= `ReadEnable;
+                                instvalid <= `InstValid;
+                            end
+                            `EXE_ADD: begin // add 指令
+                                wreg_o <= `WriteEnable;
+                                aluop_o <= `EXE_ADD_OP;
+                                alusel_o <= `EXE_RES_ARITHMETIC;
+                                reg1_read_o <= `ReadEnable;
+                                reg2_read_o <= `ReadEnable;
+                                instvalid <= `InstValid;
+                            end
+                            `EXE_ADDU: begin // addu 指令
+                                wreg_o <= `WriteEnable;
+                                aluop_o <= `EXE_ADDU_OP;
+                                alusel_o <= `EXE_RES_ARITHMETIC;
+                                reg1_read_o <= `ReadEnable;
+                                reg2_read_o <= `ReadEnable;
+                                instvalid <= `InstValid;
+                            end
+                            `EXE_SUB: begin // sub 指令
+                                wreg_o <= `WriteEnable;
+                                aluop_o <= `EXE_SUB_OP;
+                                alusel_o <= `EXE_RES_ARITHMETIC;
+                                reg1_read_o <= `ReadEnable;
+                                reg2_read_o <= `ReadEnable;
+                                instvalid <= `InstValid;
+                            end 
+                            `EXE_SUBU: begin // subu 指令
+                                wreg_o <= `WriteEnable;
+                                aluop_o <= `EXE_SUBU_OP;
+                                alusel_o <= `EXE_RES_ARITHMETIC;
+                                reg1_read_o <= `ReadEnable;
+                                reg2_read_o <= `ReadEnable;
+                                instvalid <= `InstValid;
+                            end
+                            `EXE_MULT: begin // mult 指令
+                                wreg_o <= `WriteDisable;
+                                aluop_o <= `EXE_MULT_OP;
+                                reg1_read_o <= `ReadEnable;
+                                reg2_read_o <= `ReadEnable;
+                                instvalid <= `InstValid;
+                            end
+                            `EXE_MULTU: begin // multu 指令
+                                wreg_o <= `WriteDisable;
+                                aluop_o <= `EXE_MULTU_OP;
+                                reg1_read_o <= `ReadEnable;
+                                reg2_read_o <= `ReadEnable;
+                                instvalid <= `InstValid;
+                            end
                             default: begin 
                             end  
                         endcase
@@ -254,6 +316,76 @@ always @( *) begin
                 reg1_read_o <= `ReadDisable;
                 reg2_read_o <= `ReadDisable;
                 instvalid <= `InstValid;
+            end
+            `EXE_SLTI: begin // slti 指令
+                wreg_o <= `WriteEnable;
+                aluop_o <= `EXE_SLT_OP;
+                alusel_o <= `EXE_RES_ARITHMETIC;
+                reg1_read_o <= `ReadEnable;
+                reg2_read_o <= `ReadDisable;
+                imm <= {{16{inst_i[15]}}, inst_i[15:0]}; // 立即数符号扩展
+                wd_o <= rt;
+                instvalid <= `InstValid;
+            end
+            `EXE_SLTIU: begin // sltiu 指令
+                wreg_o <= `WriteEnable;
+                aluop_o <= `EXE_SLTU_OP;
+                alusel_o <= `EXE_RES_ARITHMETIC;
+                reg1_read_o <= `ReadEnable;
+                reg2_read_o <= `ReadDisable;
+                imm <= {{16{inst_i[15]}}, inst_i[15:0]}; // 立即数符号扩展
+                wd_o <= rt;
+                instvalid <= `InstValid;
+            end
+            `EXE_ADDI: begin // addi 指令
+                wreg_o <= `WriteEnable;
+                aluop_o <= `EXE_ADDI_OP;
+                alusel_o <= `EXE_RES_ARITHMETIC;
+                reg1_read_o <= `ReadEnable;
+                reg2_read_o <= `ReadDisable;
+                imm <= {{16{inst_i[15]}}, inst_i[15:0]};
+                wd_o <= rt;
+                instvalid <= `InstValid;
+            end
+            `EXE_ADDIU: begin // addiu 指令
+                wreg_o <= `WriteEnable;
+                aluop_o <= `EXE_ADDIU_OP;
+                alusel_o <= `EXE_RES_ARITHMETIC;
+                reg1_read_o <= `ReadEnable;
+                reg2_read_o <= `ReadDisable;
+                imm <= {{16{inst_i[15]}}, inst_i[15:0]};
+                wd_o <= rt;
+                instvalid <= `InstValid;
+            end
+            `EXE_SPECIAL2_INST: begin // op 等于 SPECIAL2
+                case (func)
+                    `EXE_CLZ: begin // clz 指令
+                        wreg_o <= `WriteEnable;
+                        aluop_o <= `EXE_CLZ_OP;
+                        alusel_o <= `EXE_RES_ARITHMETIC;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadDisable;
+                        instvalid <= `InstValid;
+                    end
+                    `EXE_CLO: begin // clo 指令
+                        wreg_o <= `WriteEnable;
+                        aluop_o <= `EXE_CLO_OP;
+                        alusel_o <= `EXE_RES_ARITHMETIC;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadDisable;
+                        instvalid <= `InstValid;
+                    end
+                    `EXE_MUL: begin // mul 指令
+                        wreg_o <= `WriteEnable;
+                        aluop_o <= `EXE_MUL_OP;
+                        alusel_o <= `EXE_RES_MUL;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadEnable;
+                        instvalid <= `InstValid;
+                    end
+                    default: begin
+                    end  
+                endcase 
             end
             default: begin
             end
