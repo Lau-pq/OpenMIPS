@@ -74,6 +74,14 @@ wire[`RegAddrBus] reg2_addr;
 wire[`RegBus] hi;
 wire[`RegBus] lo;
 
+
+//连接执行阶段与 ex_mem 模块，用于多周期的 madd、maddu、msub、msubu 指令
+wire[`DoubleRegBus] hilo_temp_o;
+wire[1:0] cnt_o;
+
+wire[`DoubleRegBus] hilo_temp_i;
+wire[1:0] cnt_i;
+
 // 与流水线暂停相关的变量
 wire[`StallBus] stall;
 wire stallreq_from_id;	
@@ -198,6 +206,10 @@ ex ex0(
     .wb_lo_i(wb_lo_i), 
     .wb_whilo_i(wb_whilo_i), 
 
+    // 从 EX/MEM 模块传递过来的信息
+    .hilo_temp_i(hilo_temp_i), 
+    .cnt_i(cnt_i), 
+
     // 输出到 EX/MEM 模块的信息
     .wd_o(ex_wd_o), 
     .wreg_o(ex_wreg_o), 
@@ -207,10 +219,12 @@ ex ex0(
     .lo_o(ex_lo_o), 
     .whilo_o(ex_whilo_o), 
 
+    .hilo_temp_o(hilo_temp_o), 
+    .cnt_o(cnt_o), 
+
     // 送到 ctrl 模块的信息
     .stallreq(stallreq_from_ex)
 );
-
 // EX/MEM 模块例化
 ex_mem ex_mem0(
     .clk(clk), 
@@ -225,13 +239,20 @@ ex_mem ex_mem0(
     .ex_lo(ex_lo_o),
     .ex_whilo(ex_whilo_o),
 
+    .hilo_i(hilo_temp_o),
+	.cnt_i(cnt_o),
+
     // 送到访存阶段 MEM 模块的信息
     .mem_wd(mem_wd_i), 
     .mem_wreg(mem_wreg_i), 
     .mem_wdata(mem_wdata_i), 
     .mem_hi(mem_hi_i), 
     .mem_lo(mem_lo_i), 
-    .mem_whilo(mem_whilo_i)
+    .mem_whilo(mem_whilo_i),
+    
+    // 送到 EX 模块的信息
+    .hilo_o(hilo_temp_i),
+	.cnt_o(cnt_i)
 );
 
 // MEM 模块例化

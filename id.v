@@ -388,6 +388,38 @@ always @( *) begin
                         reg2_read_o <= `ReadEnable;
                         instvalid <= `InstValid;
                     end
+                    `EXE_MADD: begin // madd 指令
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_MADD_OP;
+                        alusel_o <= `EXE_RES_MUL;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadEnable;
+                        instvalid <= `InstValid;
+                    end
+                    `EXE_MADDU: begin // maddu 指令
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_MADDU_OP; 
+                        alusel_o <= `EXE_RES_MUL;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadEnable;
+                        instvalid <= `InstValid;
+                    end
+                    `EXE_MSUB: begin // msub 指令
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_MSUB_OP;
+                        alusel_o <= `EXE_RES_MUL;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadEnable;
+                        instvalid <= `InstValid;
+                    end
+                    `EXE_MSUBU: begin // msubu 指令
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_MSUBU_OP;
+                        alusel_o <= `EXE_RES_MUL;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadEnable;
+                        instvalid <= `InstValid;
+                    end
                     default: begin
                     end  
                 endcase 

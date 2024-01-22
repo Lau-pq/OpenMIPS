@@ -60,6 +60,11 @@
 `define EXE_MULT 6'b011000 // 指令码 mult 的功能码
 `define EXE_MULTU 6'b011001 // 指令 multu 的功能码
 
+`define EXE_MADD 6'b000000 // 指令 madd 的功能码
+`define EXE_MADDU 6'b000001 // 指令 maddu 的功能码
+`define EXE_MSUB 6'b000100 // 指令 msub 的功能码
+`define EXE_MSUBU 6'b000101 // 指令 msubu 的功能码
+
 `define EXE_SYNC 6'b001111 // 指令 sync 的功能码
 `define EXE_PREF 6'b110011 // 指令 pref 的指令码
 
@@ -99,6 +104,11 @@
 `define EXE_MULT_OP  8'b00011000
 `define EXE_MULTU_OP  8'b00011001
 `define EXE_MUL_OP  8'b10101001
+
+`define EXE_MADD_OP  8'b10100110
+`define EXE_MADDU_OP  8'b10101000
+`define EXE_MSUB_OP  8'b10101010
+`define EXE_MSUBU_OP  8'b10101011
 
 `define EXE_NOP_OP 8'b0000_0000
 
