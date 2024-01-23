@@ -26,6 +26,10 @@ module ex(
     input wire[`DoubleRegBus] hilo_temp_i, // 第一个执行周期得到的乘法结果
     input wire[1:0] cnt_i, // 当前处于执行阶段的第几个时钟周期
 
+    // 来自除法模块的输入
+    input wire[`DoubleRegBus] div_result_i, // 除法运算结果
+    input wire div_ready_i, // 除法运算是否结束
+
     // 处于执行阶段的指令对 HI、LO寄存器的写操作请求
     output reg[`RegBus] hi_o, // 执行阶段的指令要写入 HI 寄存器的值
     output reg[`RegBus] lo_o, // 执行阶段的指令要写入 LO 寄存器的值
@@ -38,6 +42,11 @@ module ex(
 
     output reg[`DoubleRegBus] hilo_temp_o, // 第一个执行周期得到的乘法结果
     output reg[1:0] cnt_o, // 下一个时钟周期处于执行阶段的第几个时钟周期
+
+    output reg[`RegBus] div_opdata1_o, // 被除数
+    output reg[`RegBus] div_opdata2_o, // 除数
+    output reg div_start_o, // 是否开始除法运算
+    output reg signed_div_o, // 是否是有符号除法，为 1表示是有符号除法
 
     output reg stallreq // 流实现是否暂停
 );
@@ -60,7 +69,8 @@ wire[`RegBus] opdata1_mult; // 乘法操作中的被乘数
 wire[`RegBus] opdata2_mult; // 乘法操作中的乘数
 wire[`DoubleRegBus] hilo_temp; // 临时保存乘法结果，宽度为 64位
 reg[`DoubleRegBus] hilo_temp1; // 最终运算结果
-reg stallreq_for_madd_msub;
+reg stallreq_for_madd_msub; // 是否由于乘累加、乘累减运算导致流水线暂停
+reg stallreq_for_div; // 是否由于除法运算导致流水线暂停
 
 // ******************** 计算变量的值 ***********************
 // 减法 或 有符号比较 reg2_i_mux 为 reg2_i 补码，否则为 reg2_i
@@ -299,6 +309,69 @@ always @( *) begin
     end
 end
 
+// 输出 DIV 模块控制信息，获取 DIV 模块给出的结果
+always @( *) begin
+    if (rst == `RstEnable) begin
+        stallreq_for_div <= `NoStop;
+        div_opdata1_o <= `ZeroWord;
+        div_opdata2_o <= `ZeroWord;
+        div_start_o <= `DivStop;
+        signed_div_o <= 1'b0;
+    end else begin
+        case (aluop_i)
+            `EXE_DIV_OP: begin // div 指令
+                if (div_ready_i == `DivResultNotReady) begin
+                    div_opdata1_o <= reg1_i; // 被除数
+                    div_opdata2_o <= reg2_i; // 除数
+                    div_start_o <= `DivStart; // 开始除法运算
+                    signed_div_o <= 1'b1; // 有符号除法
+                    stallreq_for_div <= `Stop; // 请求流水线暂停
+                end else if (div_ready_i == `DivResultReady) begin
+                    div_opdata1_o <= reg1_i; // 被除数
+                    div_opdata2_o <= reg2_i; // 除数
+                    div_start_o <= `DivStop; // 结束除法运算
+                    signed_div_o <= 1'b1; // 有符号除法
+                    stallreq_for_div <= `NoStop; // 不再请求流水线暂停
+                end else begin
+                    div_opdata1_o <= `ZeroWord;
+                    div_opdata2_o <= `ZeroWord;
+                    div_start_o <= `DivStop;
+                    signed_div_o <= 1'b0;
+                    stallreq_for_div <= `NoStop;
+                end
+            end
+            `EXE_DIVU_OP: begin // divu 指令
+                if (div_ready_i == `DivResultNotReady) begin
+                    div_opdata1_o <= reg1_i; // 被除数
+                    div_opdata2_o <= reg2_i; // 除数
+                    div_start_o <= `DivStart; // 开始除法运算
+                    signed_div_o <= 1'b0; // 无符号除法
+                    stallreq_for_div <= `Stop; // 请求流水线暂停
+                end else if (div_ready_i == `DivResultReady) begin
+                    div_opdata1_o <= reg1_i; // 被除数
+                    div_opdata2_o <= reg2_i; // 除数
+                    div_start_o <= `DivStop; // 结束除法运算
+                    signed_div_o <= 1'b0; // 无符号除法
+                    stallreq_for_div <= `NoStop; // 不再请求流水线暂停
+                end else begin
+                    div_opdata1_o <= `ZeroWord;
+                    div_opdata2_o <= `ZeroWord;
+                    div_start_o <= `DivStop;
+                    signed_div_o <= 1'b0;
+                    stallreq_for_div <= `NoStop;
+                end
+            end
+            default: begin
+                div_opdata1_o <= `ZeroWord;
+                div_opdata2_o <= `ZeroWord;
+                div_start_o <= `DivStop;
+                signed_div_o <= 1'b0;
+                stallreq_for_div <= `NoStop;
+            end  
+        endcase
+    end
+end
+
 // ********** 得到最新的 HI、LO寄存器的值，解决数据相关问题 ***********
 always @( *) begin
     if (rst == `RstEnable) begin
@@ -312,7 +385,7 @@ always @( *) begin
     end
 end
 
-//mthi, mtlo 指令，需要给出 whilo_o、hi_o、lo_o 的值
+//HI、LO 寄存器写信息
 always @( *) begin
     if (rst == `RstEnable) begin
         whilo_o <= `WriteDisable;
@@ -338,6 +411,10 @@ always @( *) begin
         whilo_o <= `WriteEnable;
         hi_o <= HI; // HI 保持不变
         lo_o <= reg1_i; // 写 LO 寄存器
+    end else if ((aluop_i == `EXE_DIV_OP) || (aluop_i == `EXE_DIVU_OP)) begin
+        whilo_o <= `WriteEnable;
+        hi_o <= div_result_i[63:32];
+        lo_o <= div_result_i[31:0];
     end else begin
         whilo_o <= `WriteDisable;
         hi_o <= `ZeroWord;
@@ -377,7 +454,7 @@ end
 
 // **************** 暂停流水线 *****************
 always @( *) begin
-    stallreq = stallreq_for_madd_msub;
+    stallreq = stallreq_for_madd_msub || stallreq_for_div;
 end
 
 endmodule

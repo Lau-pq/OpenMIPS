@@ -65,6 +65,9 @@
 `define EXE_MSUB 6'b000100 // 指令 msub 的功能码
 `define EXE_MSUBU 6'b000101 // 指令 msubu 的功能码
 
+`define EXE_DIV  6'b011010 // 指令 div 的功能码
+`define EXE_DIVU  6'b011011 // 指令 div 的功能码
+
 `define EXE_SYNC 6'b001111 // 指令 sync 的功能码
 `define EXE_PREF 6'b110011 // 指令 pref 的指令码
 
@@ -110,6 +113,9 @@
 `define EXE_MSUB_OP  8'b10101010
 `define EXE_MSUBU_OP  8'b10101011
 
+`define EXE_DIV_OP  8'b00011010
+`define EXE_DIVU_OP  8'b00011011
+
 `define EXE_NOP_OP 8'b0000_0000
 
 // AluSel
@@ -143,3 +149,13 @@
 `define Stop 1'b1 // 流水线暂停
 `define NoStop 1'b0 // 流水线继续
 `define StallBus 5:0 // 控制信号宽度
+
+//除法div
+`define DivFree 2'b00
+`define DivByZero 2'b01
+`define DivOn 2'b10
+`define DivEnd 2'b11
+`define DivResultReady 1'b1
+`define DivResultNotReady 1'b0
+`define DivStart 1'b1
+`define DivStop 1'b0

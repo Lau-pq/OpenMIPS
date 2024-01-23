@@ -82,6 +82,15 @@ wire[1:0] cnt_o;
 wire[`DoubleRegBus] hilo_temp_i;
 wire[1:0] cnt_i;
 
+// 连接执行阶段与 div 模块，用于除法运算
+wire[`DoubleRegBus] div_result;
+wire div_ready;
+wire[`RegBus] div_opdata1;
+wire[`RegBus] div_opdata2;
+wire div_start;
+wire div_annul;
+wire signed_div;
+
 // 与流水线暂停相关的变量
 wire[`StallBus] stall;
 wire stallreq_from_id;	
@@ -210,6 +219,10 @@ ex ex0(
     .hilo_temp_i(hilo_temp_i), 
     .cnt_i(cnt_i), 
 
+    // 从 DIV 模块传递过来的信息
+    .div_result_i(div_result),
+	.div_ready_i(div_ready), 
+
     // 输出到 EX/MEM 模块的信息
     .wd_o(ex_wd_o), 
     .wreg_o(ex_wreg_o), 
@@ -221,6 +234,12 @@ ex ex0(
 
     .hilo_temp_o(hilo_temp_o), 
     .cnt_o(cnt_o), 
+
+    // 输出到 DIV 模块的信息
+    .div_opdata1_o(div_opdata1),
+	.div_opdata2_o(div_opdata2),
+	.div_start_o(div_start),
+	.signed_div_o(signed_div),
 
     // 送到 ctrl 模块的信息
     .stallreq(stallreq_from_ex)
@@ -318,6 +337,20 @@ ctrl ctrl0(
     .stallreq_from_id(stallreq_from_id), 
     .stallreq_from_ex(stallreq_from_ex), 
     .stall(stall)
+);
+
+div div0(
+    .clk(clk), 
+    .rst(rst), 
+
+    .signed_div_i(signed_div),
+	.opdata1_i(div_opdata1),
+	.opdata2_i(div_opdata2),
+	.start_i(div_start),
+	.annul_i(1'b0), // 后续补充异常处理
+
+    .result_o(div_result),
+	.ready_o(div_ready)
 );
 
 endmodule

@@ -3,8 +3,8 @@ Copyright 1986-1999, 2001-2018 Xilinx, Inc. All Rights Reserved.
 Running: D:/software/Xilinx/Vivado/2018.3/bin/unwrapped/win64.o/xelab.exe -wto 914ec505e53049c59dab08d1313e6012 --incr --debug typical --relax --mt 2 -L xil_defaultlib -L unisims_ver -L unimacro_ver -L secureip --snapshot openmips_min_sopc_tb_behav xil_defaultlib.openmips_min_sopc_tb xil_defaultlib.glbl -log elaborate.log 
 Using 2 slave threads.
 Starting static elaboration
-WARNING: [VRFC 10-3091] actual bit length 1 differs from formal bit length 32 for port 'whilo_i' [E:/competition/Loongson/OpenMIPS/openmips.v:268]
-WARNING: [VRFC 10-3091] actual bit length 1 differs from formal bit length 32 for port 'whilo_o' [E:/competition/Loongson/OpenMIPS/openmips.v:276]
+WARNING: [VRFC 10-3091] actual bit length 1 differs from formal bit length 32 for port 'whilo_i' [E:/competition/Loongson/OpenMIPS/openmips.v:287]
+WARNING: [VRFC 10-3091] actual bit length 1 differs from formal bit length 32 for port 'whilo_o' [E:/competition/Loongson/OpenMIPS/openmips.v:295]
 Completed static elaboration
 Starting simulation data flow analysis
 WARNING: [XSIM 43-4099] "E:/competition/Loongson/OpenMIPS/openmips_min_sopc.v" Line 3. Module openmips_min_sopc doesn't have a timescale but at least one module in design has a timescale.
@@ -20,6 +20,7 @@ WARNING: [XSIM 43-4099] "E:/competition/Loongson/OpenMIPS/mem.v" Line 3. Module 
 WARNING: [XSIM 43-4099] "E:/competition/Loongson/OpenMIPS/mem_wb.v" Line 3. Module mem_wb doesn't have a timescale but at least one module in design has a timescale.
 WARNING: [XSIM 43-4099] "E:/competition/Loongson/OpenMIPS/hilo_reg.v" Line 3. Module hilo_reg doesn't have a timescale but at least one module in design has a timescale.
 WARNING: [XSIM 43-4099] "E:/competition/Loongson/OpenMIPS/ctrl.v" Line 3. Module ctrl doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "E:/competition/Loongson/OpenMIPS/div.v" Line 5. Module div doesn't have a timescale but at least one module in design has a timescale.
 WARNING: [XSIM 43-4099] "E:/competition/Loongson/OpenMIPS/inst_rom.v" Line 3. Module inst_rom doesn't have a timescale but at least one module in design has a timescale.
 Completed simulation data flow analysis
 Time Resolution for simulation is 1ps
@@ -34,6 +35,7 @@ Compiling module xil_defaultlib.mem
 Compiling module xil_defaultlib.mem_wb
 Compiling module xil_defaultlib.hilo_reg
 Compiling module xil_defaultlib.ctrl
+Compiling module xil_defaultlib.div
 Compiling module xil_defaultlib.openmips
 Compiling module xil_defaultlib.inst_rom
 Compiling module xil_defaultlib.openmips_min_sopc
