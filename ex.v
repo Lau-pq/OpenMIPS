@@ -30,6 +30,9 @@ module ex(
     input wire[`DoubleRegBus] div_result_i, // 除法运算结果
     input wire div_ready_i, // 除法运算是否结束
 
+    input wire[`RegBus] link_address_i, // 处于执行阶段的转移指令要保存的返回地址
+    input wire is_in_delayslot_i, // 当前执行阶段的指令是否位于延迟槽
+
     // 处于执行阶段的指令对 HI、LO寄存器的写操作请求
     output reg[`RegBus] hi_o, // 执行阶段的指令要写入 HI 寄存器的值
     output reg[`RegBus] lo_o, // 执行阶段的指令要写入 LO 寄存器的值
@@ -437,14 +440,17 @@ always @( *) begin
         `EXE_RES_SHIFT: begin
             wdata_o <= shiftres; // 选择移位运算结果为最终运算结果
         end
-        `EXE_RES_MOVE: begin // 选择移动运算结果为最终运算结果
-            wdata_o <= moveres;
-        end
+        `EXE_RES_MOVE: begin 
+            wdata_o <= moveres; // 选择移动运算结果为最终运算结果
+        end 
         `EXE_RES_ARITHMETIC: begin
             wdata_o <= arithmeticres; // 除乘法外的简单算数操作指令
         end
         `EXE_RES_MUL: begin
             wdata_o <= mulres[31:0]; // 乘法指令 mul
+        end
+        `EXE_RES_JUMP_BRANCH: begin
+            wdata_o <= link_address_i; // 跳转指令
         end
         default: begin
             wdata_o <= `ZeroWord;

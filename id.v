@@ -19,6 +19,9 @@ module id(
     input wire[`RegBus] mem_wdata_i, // 处于访存阶段的指令要写的目的寄存器地址
     input wire[`RegAddrBus] mem_wd_i, // 处于访存阶段的指令要写入目的寄存器的数据
 
+    // 延迟槽指令
+    input wire is_in_delayslot_i, // 当前处于译码阶段的指令是否位于延迟槽 
+
     // 输出到 Regfile 的信息
     output reg reg1_read_o, // Regfile 模块的第一个读寄存器端口的读使能信号
     output reg reg2_read_o, // Regfile 模块的第二个读寄存器端口的读使能信号
@@ -32,6 +35,14 @@ module id(
     output reg[`RegBus] reg2_o, // 译码阶段的指令要进行的运算的源操作数 2
     output reg[`RegAddrBus] wd_o, // 译码阶段的指令要写入的目的寄存器地址
     output reg wreg_o,  // 译码阶段的指令是否有要写入的目的寄存器
+
+    // 延迟槽指令
+    output reg next_inst_in_delayslot_o, // 下一条进入译码阶段的指令是否位于延迟槽
+
+    output reg branch_flag_o, // 是否发生转移
+    output reg[`RegBus] branch_target_address_o, // 转移到的目标地址
+    output reg[`RegBus] link_addr_o, // 转移指令要保存的返回地址
+    output reg is_in_delayslot_o, // 当前处于译码阶段的指令是否位于延迟槽
 
     output wire stallreq // 流水线是否需要暂停
 );
@@ -51,8 +62,20 @@ reg[`RegBus] imm;
 // 指示指令是否有效
 reg instvalid;
 
+// 与转移指令实现相关的变量
+wire[`RegBus] pc_plus_8;
+wire[`RegBus] pc_plus_4;
+
+wire[`RegBus] imm_sll2_signedext;
+
+assign pc_plus_8 = pc_i + 8; // 保存当前译码阶段指令后面第 2条指令的地址
+assign pc_plus_4 = pc_i + 4; // 保存当前译码阶段指令后面紧接着的指令的地址
+// imm_sll2_signedext 对应分支指令 offset 左移两位，再符号扩展到 32位
+assign imm_sll2_signedext = {{14{inst_i[15]}}, inst_i[15:0], 2'b00}; 
+
 // 流水线是否需要暂停
 assign stallreq = `NoStop;
+
 
 // *************** 第一段：对指令进行译码 ***********************
 always @( *) begin
@@ -67,6 +90,10 @@ always @( *) begin
         reg1_addr_o <= `NOPRegAddr;
         reg2_addr_o <= `NOPRegAddr;
         imm <= `ZeroWord;
+        link_addr_o <= `ZeroWord;
+        branch_target_address_o <= `ZeroWord;
+        branch_flag_o <= `NotBranch;
+        next_inst_in_delayslot_o <= `NotInDelaySlot;
     end else begin
         aluop_o <= `EXE_NOP_OP;
         alusel_o <= `EXE_RES_NOP;
@@ -78,6 +105,10 @@ always @( *) begin
         reg1_addr_o <= rs; // rs 默认通过 Regfile 读端口1 读取的寄存器地址
         reg2_addr_o <= rt; // rt 默认通过 Regfile 读端口2 读取的寄存器地址
         imm <= `ZeroWord;
+        link_addr_o <= `ZeroWord;
+        branch_target_address_o <= `ZeroWord;
+        branch_flag_o <= `NotBranch;
+        next_inst_in_delayslot_o <= `NotInDelaySlot;
 
         case (op)
             `EXE_SPECIAL_INST: begin
@@ -280,6 +311,27 @@ always @( *) begin
                                 reg2_read_o <= `ReadEnable;
                                 instvalid <= `InstValid;
                             end
+                            `EXE_JR: begin // jr 指令
+                                wreg_o <= `WriteDisable;
+                                reg1_read_o <= `ReadEnable;
+                                reg2_read_o <= `ReadDisable;  
+                                branch_target_address_o <= reg1_o;
+                                branch_flag_o <= `Branch;
+                                next_inst_in_delayslot_o <= `InDelaySlot;
+                                instvalid <= `InstValid;                
+                            end
+                            `EXE_JALR: begin // jalr 指令
+                                wreg_o <= `WriteEnable;
+                                alusel_o <= `EXE_RES_JUMP_BRANCH;
+                                reg1_read_o <= `ReadEnable;
+                                reg2_read_o <= `ReadDisable;
+                                wd_o <= rd;
+                                link_addr_o <= pc_plus_8;
+                                branch_target_address_o <= reg1_o;
+                                branch_flag_o <= `Branch;
+                                next_inst_in_delayslot_o <= `InDelaySlot;
+                                instvalid <= `InstValid;
+                            end
                             default: begin 
                             end  
                         endcase
@@ -375,6 +427,125 @@ always @( *) begin
                 imm <= {{16{inst_i[15]}}, inst_i[15:0]};
                 wd_o <= rt;
                 instvalid <= `InstValid;
+            end
+            `EXE_J: begin // j 指令
+                wreg_o <= `WriteDisable;
+                reg1_read_o <= `ReadDisable;
+                reg2_read_o <= `ReadDisable;
+                branch_target_address_o <= {pc_plus_4[31:28], inst_i[25:0], 2'b00};
+                branch_flag_o <= `Branch;
+                next_inst_in_delayslot_o <= `InDelaySlot;
+                instvalid <= `InstValid;
+            end
+            `EXE_JAL: begin // jal 指令
+                wreg_o <= `WriteEnable;
+                alusel_o <= `EXE_RES_JUMP_BRANCH;
+                reg1_read_o <= `ReadDisable;
+                reg2_read_o <= `ReadDisable;
+                wd_o <= 5'b11111; // 寄存器 $31
+                link_addr_o <= pc_plus_8;
+                branch_target_address_o <= {pc_plus_4[31:28], inst_i[25:0], 2'b00};
+                branch_flag_o <= `Branch;
+                next_inst_in_delayslot_o <= `InDelaySlot;
+                instvalid <= `InstValid;
+            end
+            `EXE_BEQ: begin // beq 指令
+                wreg_o <= `WriteDisable;
+                reg1_read_o <= `ReadEnable;
+                reg2_read_o <= `ReadEnable;
+                instvalid <= `InstValid;
+                if (reg1_o == reg2_o) begin
+                    branch_target_address_o <= pc_plus_4 + imm_sll2_signedext;
+                    branch_flag_o <= `Branch;
+                    next_inst_in_delayslot_o <= `InDelaySlot;
+                end
+            end
+            `EXE_BGTZ: begin // bgtz 指令
+                wreg_o <= `WriteDisable;
+                reg1_read_o <= `ReadEnable;
+                reg2_read_o <= `ReadDisable;
+                instvalid <= `InstValid;
+                if ((!reg1_o[31]) && (reg1_o != `ZeroWord)) begin // rs 的值大于 0
+                    branch_target_address_o <= pc_plus_4 + imm_sll2_signedext;
+                    branch_flag_o <= `Branch;
+                    next_inst_in_delayslot_o <= `InDelaySlot;
+                end
+            end
+            `EXE_BLEZ: begin // blez 指令
+                wreg_o <= `WriteDisable;
+                reg1_read_o <= `ReadEnable;
+                reg2_read_o <= `ReadDisable;
+                instvalid <= `InstValid;
+                if ((reg1_o[31]) || (reg1_o == `ZeroWord)) begin // rs 的值小于等于 0
+                    branch_target_address_o <= pc_plus_4 + imm_sll2_signedext;
+                    branch_flag_o <= `Branch;
+                    next_inst_in_delayslot_o <= `InDelaySlot;
+                end
+            end
+            `EXE_BNE: begin // bne 指令
+                wreg_o <= `WriteDisable;
+                reg1_read_o  <= `ReadEnable;
+                reg2_read_o <= `ReadEnable;
+                instvalid <= `InstValid;
+                if (reg1_o != reg2_o) begin
+                    branch_target_address_o <= pc_plus_4 + imm_sll2_signedext;
+                    branch_flag_o <= `Branch;
+                    next_inst_in_delayslot_o <= `InDelaySlot;
+                end
+            end
+            `EXE_REGIMM_INST: begin // op 等于 regimm
+                case (rt) 
+                    `EXE_BGEZ: begin // bgez 指令
+                        wreg_o <= `WriteDisable;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadDisable;
+                        instvalid <= `InstValid;
+                        if (!reg1_o[31]) begin // rs 的值大于等于0
+                            branch_target_address_o <= pc_plus_4 + imm_sll2_signedext;
+                            branch_flag_o <= `Branch;
+                            next_inst_in_delayslot_o <= `InDelaySlot;
+                        end
+                    end
+                    `EXE_BGEZAL: begin // bgezal 指令
+                        wreg_o <= `WriteEnable;
+                        alusel_o <= `EXE_RES_JUMP_BRANCH;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadDisable;
+                        link_addr_o <= pc_plus_8;
+                        wd_o <= 5'b11111; // 寄存器 $31
+                        instvalid <= `InstValid;
+                        if (!reg1_o[31]) begin // rs 的值大于等于 0
+                            branch_target_address_o <= pc_plus_4 + imm_sll2_signedext;
+                            branch_flag_o <= `Branch;
+                            next_inst_in_delayslot_o <= `InDelaySlot;
+                        end
+                    end
+                    `EXE_BLTZ: begin // bltz 指令
+                        wreg_o <= `WriteDisable;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadDisable;
+                        instvalid <= `InstValid;
+                        if (reg1_o[31]) begin // rs 的值小于0
+                            branch_target_address_o <= pc_plus_4 + imm_sll2_signedext;
+                            branch_flag_o <= `Branch;
+                            next_inst_in_delayslot_o <= `InDelaySlot;
+                        end
+                    end
+                    `EXE_BLTZAL: begin
+                        wreg_o <= `WriteEnable;
+                        alusel_o <= `EXE_RES_JUMP_BRANCH;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadDisable;
+                        link_addr_o <= pc_plus_8;
+                        wd_o <= 5'b11111; // 寄存器 $31
+                        instvalid <= `InstValid;
+                        if (reg1_o[31]) begin // rs 的值小于 0
+                            branch_target_address_o <= pc_plus_4 + imm_sll2_signedext;
+                            branch_flag_o <= `Branch;
+                            next_inst_in_delayslot_o <= `InDelaySlot;
+                        end
+                    end
+                endcase
             end
             `EXE_SPECIAL2_INST: begin // op 等于 SPECIAL2
                 case (func)
@@ -512,6 +683,15 @@ always @( *) begin
         reg2_o <= imm; // 立即数
     end else begin
         reg2_o <= `ZeroWord;
+    end
+end
+
+// 输出变量 is_in_delayslot_o 表示当前译码阶段指令是否是延迟槽指令
+always @( *) begin
+    if (rst == `RstEnable) begin
+        is_in_delayslot_o <= `NotInDelaySlot;
+    end else begin
+        is_in_delayslot_o <= is_in_delayslot_i;
     end
 end
 

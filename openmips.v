@@ -21,6 +21,8 @@ wire[`RegBus] id_reg1_o;
 wire[`RegBus] id_reg2_o;
 wire id_wreg_o;
 wire[`RegAddrBus] id_wd_o;
+wire id_is_in_delayslot_o;
+wire[`RegBus] id_link_address_o;
 
 // 连接 ID/EX 模块的输出与执行阶段 EX 模块的输入的变量
 wire[`AluOpBus] ex_aluop_i;
@@ -29,6 +31,8 @@ wire[`RegBus] ex_reg1_i;
 wire[`RegBus] ex_reg2_i;
 wire ex_wreg_i;
 wire[`RegAddrBus] ex_wd_i;
+wire ex_is_in_delayslot_i;	
+wire[`RegBus] ex_link_address_i;
 
 // 连接执行阶段 EX 模块的输出与 EX/MEM 模块的输入的变量
 wire ex_wreg_o;
@@ -91,6 +95,13 @@ wire div_start;
 wire div_annul;
 wire signed_div;
 
+// 与跳转指令相关
+wire is_in_delayslot_i;
+wire is_in_delayslot_o;
+wire next_inst_in_delayslot_o;
+wire id_branch_flag_o;
+wire[`RegBus] branch_target_address;
+
 // 与流水线暂停相关的变量
 wire[`StallBus] stall;
 wire stallreq_from_id;	
@@ -101,6 +112,8 @@ pc_reg pc_reg0(
     .clk(clk),
     .rst(rst),
     .stall(stall), 
+    .branch_flag_i(id_branch_flag_o), 
+    .branch_target_address_i(branch_target_address), 
     .pc(pc), 
     .ce(rom_ce_o)
 ); 
@@ -138,6 +151,9 @@ id id0(
     .mem_wdata_i(mem_wdata_o), 
     .mem_wd_i(mem_wd_o), 
 
+    // 
+    .is_in_delayslot_i(is_in_delayslot_i),
+
     // 送到 Regfile 模块的信息
     .reg1_read_o(reg1_read), 
     .reg2_read_o(reg2_read), 
@@ -151,6 +167,12 @@ id id0(
     .reg2_o(id_reg2_o), 
     .wd_o(id_wd_o), 
     .wreg_o(id_wreg_o),
+
+    .next_inst_in_delayslot_o(next_inst_in_delayslot_o),	
+	.branch_flag_o(id_branch_flag_o),
+	.branch_target_address_o(branch_target_address),       
+	.link_addr_o(id_link_address_o),
+	.is_in_delayslot_o(id_is_in_delayslot_o),
 
     // 送到 ctrl 模块的信息
     .stallreq(stallreq_from_id)
@@ -184,6 +206,9 @@ id_ex id_ex0(
     .id_reg2(id_reg2_o), 
     .id_wd(id_wd_o), 
     .id_wreg(id_wreg_o),
+    .id_link_address(id_link_address_o),
+	.id_is_in_delayslot(id_is_in_delayslot_o),
+	.next_inst_in_delayslot_i(next_inst_in_delayslot_o),
 
     // 传递到执行阶段 EX 模块的信息
     .ex_aluop(ex_aluop_i), 
@@ -191,7 +216,10 @@ id_ex id_ex0(
     .ex_reg1(ex_reg1_i), 
     .ex_reg2(ex_reg2_i), 
     .ex_wd(ex_wd_i), 
-    .ex_wreg(ex_wreg_i)
+    .ex_wreg(ex_wreg_i), 
+    .ex_link_address(ex_link_address_i),
+  	.ex_is_in_delayslot(ex_is_in_delayslot_i),
+	.is_in_delayslot_o(is_in_delayslot_i)
 );
 
 // EX 模块例化
@@ -214,6 +242,9 @@ ex ex0(
     .wb_hi_i(wb_hi_i), 
     .wb_lo_i(wb_lo_i), 
     .wb_whilo_i(wb_whilo_i), 
+
+    .link_address_i(ex_link_address_i),
+	.is_in_delayslot_i(ex_is_in_delayslot_i),
 
     // 从 EX/MEM 模块传递过来的信息
     .hilo_temp_i(hilo_temp_i), 

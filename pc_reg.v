@@ -3,7 +3,13 @@
 module pc_reg (
     input wire clk, // 时钟信号
     input wire rst, // 复位信号
+
     input wire[`StallBus] stall, // 来自控制模块 ctrl 的信息
+
+    // 来自译码阶段 ID 模块的信息
+    input wire branch_flag_i, // 是否发生转移
+    input wire[`RegBus] branch_target_address_i, // 转移到的目标地址   
+
     output reg[`InstAddrBus] pc, // 要读取的指令地址
     output reg ce // 指令存储器使能信号
 );
@@ -21,7 +27,11 @@ always @(posedge clk) begin
     if (ce == `ChipDisable) begin
         pc <= 32'h0000_0000; // 指令存储器禁用的时候，pc为 0 
     end else if (stall[0] == `NoStop) begin // stall[0] 为 NoStop 时
-        pc <= pc + 4'h4; // 指令存储器使能的时候，pc的值每时钟周期加 4（一条指令对应4个字节）
+        if (branch_flag_i == `Branch) begin
+            pc <= branch_target_address_i;
+        end else begin
+            pc <= pc + 4'h4; // 指令存储器使能的时候，pc的值每时钟周期加 4（一条指令对应4个字节）
+        end 
     end
 end
 
