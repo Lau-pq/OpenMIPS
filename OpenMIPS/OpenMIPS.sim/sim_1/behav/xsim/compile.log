@@ -1,5 +1,7 @@
 INFO: [VRFC 10-2263] Analyzing Verilog file "E:/competition/Loongson/OpenMIPS/ctrl.v" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module ctrl
+INFO: [VRFC 10-2263] Analyzing Verilog file "E:/competition/Loongson/OpenMIPS/data_ram.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module data_ram
 INFO: [VRFC 10-2263] Analyzing Verilog file "E:/competition/Loongson/OpenMIPS/div.v" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module div
 INFO: [VRFC 10-2263] Analyzing Verilog file "E:/competition/Loongson/OpenMIPS/ex.v" into library xil_defaultlib

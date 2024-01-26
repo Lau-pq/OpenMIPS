@@ -18,6 +18,11 @@ module ex_mem(
     input wire[`DoubleRegBus] hilo_i, // 保存的乘法结果
     input wire[1:0] cnt_i, // 下一个时钟周期是执行阶段的第几个时钟周期
 
+    // 为实现加载、存储指令而添加的输入接口
+    input wire[`AluOpBus] ex_aluop, // 执行阶段的指令要进行的运算子类型
+    input wire[`RegBus] ex_mem_addr, // 执行阶段的加载、存储指令对应的存储器地址
+    input wire[`RegBus] ex_reg2, // 执行阶段的存储指令要存储的数据，或者 lwl、lwr 指令要写入的目的寄存器的原始值
+
     // 送到访存阶段的信息
     output reg[`RegAddrBus] mem_wd, // 访存阶段的指令要写入的目的寄存器地址
     output reg mem_wreg, // 访存阶段的指令是否有要写入的目的寄存器
@@ -27,7 +32,12 @@ module ex_mem(
     output reg mem_whilo,  // 访存阶段的指令是否要写 HI、LO寄存器
 
     output reg[`DoubleRegBus] hilo_o, // 保存的乘法结果
-    output reg[1:0] cnt_o // 当前处于执行阶段的第几个时钟周期 
+    output reg[1:0] cnt_o, // 当前处于执行阶段的第几个时钟周期 
+
+    // 为实现加载、存储指令而添加的输出端口
+    output reg[`AluOpBus] mem_aluop, // 访存阶段的指令要进行的运算的子类型
+    output reg[`RegBus] mem_mem_addr, // 访存阶段的加载、存储指令对应的存储器地址
+    output reg[`RegBus] mem_reg2 // 访存阶段的存储指令要存储的数据，或者 lwl、lwr 指令要写入的目的寄存器的原始值
 );
 
 always @(posedge clk) begin
@@ -40,6 +50,9 @@ always @(posedge clk) begin
         mem_whilo <= `WriteDisable;
         hilo_o <= {`ZeroWord, `ZeroWord};
         cnt_o <= 2'b00;
+        mem_aluop <= `EXE_NOP_OP;
+        mem_mem_addr <= `ZeroWord;
+        mem_reg2 <= `ZeroWord;
     end else if ((stall[3] == `Stop) && (stall[4] == `NoStop)) begin // 执行暂停 访存继续 空指令
         mem_wd <= `NOPRegAddr;
         mem_wreg <= `WriteDisable;
@@ -48,7 +61,10 @@ always @(posedge clk) begin
         mem_lo <= `ZeroWord;
         mem_whilo <= `WriteDisable;
         hilo_o <= hilo_i; 
-        cnt_o <= cnt_i; 
+        cnt_o <= cnt_i;
+        mem_aluop <= `EXE_NOP_OP;
+        mem_mem_addr <= `ZeroWord;
+        mem_reg2 <= `ZeroWord;
     end else if (stall[3] == `NoStop) begin // 执行继续
         mem_wd <= ex_wd;
         mem_wreg <= ex_wreg;
@@ -58,6 +74,9 @@ always @(posedge clk) begin
         mem_whilo <= ex_whilo;
         hilo_o <= {`ZeroWord, `ZeroWord}; 
         cnt_o <= 2'b00;
+        mem_aluop <= ex_aluop;
+        mem_mem_addr <= ex_mem_addr;
+        mem_reg2 <= ex_reg2;
     end else begin
         hilo_o <= hilo_i;
         cnt_o <= cnt_i;

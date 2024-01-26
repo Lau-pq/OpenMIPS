@@ -33,6 +33,8 @@ module ex(
     input wire[`RegBus] link_address_i, // 处于执行阶段的转移指令要保存的返回地址
     input wire is_in_delayslot_i, // 当前执行阶段的指令是否位于延迟槽
 
+    input wire[`RegBus] inst_i, // 当前处于执行阶段的指令
+
     // 处于执行阶段的指令对 HI、LO寄存器的写操作请求
     output reg[`RegBus] hi_o, // 执行阶段的指令要写入 HI 寄存器的值
     output reg[`RegBus] lo_o, // 执行阶段的指令要写入 LO 寄存器的值
@@ -51,7 +53,12 @@ module ex(
     output reg div_start_o, // 是否开始除法运算
     output reg signed_div_o, // 是否是有符号除法，为 1表示是有符号除法
 
-    output reg stallreq // 流实现是否暂停
+    output reg stallreq,  // 流实现是否暂停
+
+    // 为加载、存储指令准备的
+    output wire[`AluOpBus] aluop_o, // 执行阶段的指令要进行的运算子类型
+    output wire[`RegBus] mem_addr_o, // 加载、存储指令对应的存储器地址
+    output wire[`RegBus] reg2_o // 存储指令要存储的数据，或者 lwl、lwr 指令要加载到的目的寄存器的原始值
 );
 
 reg[`RegBus] logicout; // 保存逻辑运算的结果
@@ -121,6 +128,13 @@ assign opdata2_mult =
 
 // 得到临时乘法结果，保存在变量 hilo_temp 中
 assign hilo_temp = opdata1_mult * opdata2_mult;
+
+// aluop_o 会传递到访存阶段，届时将利用其确定加载、存储类型
+assign aluop_o = aluop_i;
+
+assign mem_addr_o = reg1_i + {{16{inst_i[15]}}, inst_i[15:0]}; // reg1_i为 base、inst_i[15:0] 为 offset
+
+assign reg2_o = reg2_i;
 
 // ********** 依据 aluop_i 指示的运算子类型进行运算 *************
 // 进行逻辑运算

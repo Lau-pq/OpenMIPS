@@ -16,6 +16,8 @@ module id_ex(
     input wire id_is_in_delayslot, // 当前处于译码阶段的指令是否位于延迟槽
     input wire next_inst_in_delayslot_i, // 下一条进入译码阶段的指令是否位于延迟槽
 
+    input wire[`RegBus] id_inst,
+
     // 来自控制模块的信息
     input wire[`StallBus] stall,  
 
@@ -29,7 +31,9 @@ module id_ex(
 
     output reg[`RegBus] ex_link_address, // 处于执行阶段的转移指令要保存的返回地址
     output reg ex_is_in_delayslot, // 当前处于执行阶段的指令是否位于延迟槽
-    output reg is_in_delayslot_o // 当前处于译码阶段的指令是否位于延迟槽
+    output reg is_in_delayslot_o, // 当前处于译码阶段的指令是否位于延迟槽
+
+    output reg[`RegBus] ex_inst
 );
 
 always @(posedge clk) begin
@@ -43,6 +47,7 @@ always @(posedge clk) begin
         ex_link_address <= `ZeroWord;
         ex_is_in_delayslot <= `NotInDelaySlot;
         is_in_delayslot_o <= `NotInDelaySlot;
+        ex_inst <= `ZeroWord;
     end else if ((stall[2] == `Stop) && (stall[3] == `NoStop)) begin // 译码暂停 执行继续 空指令
         ex_aluop <= `EXE_NOP_OP;
         ex_alusel <= `EXE_RES_NOP;
@@ -53,6 +58,7 @@ always @(posedge clk) begin
         ex_link_address <= `ZeroWord;
         ex_is_in_delayslot <= `NotInDelaySlot;
         is_in_delayslot_o <= `NotInDelaySlot;
+        ex_inst <= `ZeroWord;
     end else if (stall[2] == `NoStop) begin // 译码继续
         ex_aluop <= id_aluop;
         ex_alusel <= id_alusel;
@@ -63,6 +69,7 @@ always @(posedge clk) begin
         ex_link_address <= id_link_address;
         ex_is_in_delayslot <= id_is_in_delayslot;
         is_in_delayslot_o <= next_inst_in_delayslot_i;
+        ex_inst <= id_inst;
     end
 end
 

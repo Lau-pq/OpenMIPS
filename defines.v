@@ -81,6 +81,20 @@
 `define EXE_BGEZ  5'b00001 // 指令 bgez 的功能码
 `define EXE_BGEZAL  5'b10001 // 指令 bgezal 的功能码
 
+`define EXE_LB  6'b100000 // 指令 lb 的指令码
+`define EXE_LBU  6'b100100 // 指令 lbu 的指令码
+`define EXE_LH  6'b100001 // 指令 lh 的指令码
+`define EXE_LHU  6'b100101 // 指令 lhu 的指令码
+`define EXE_LL  6'b110000
+`define EXE_LW  6'b100011 // 指令 lw 的指令码
+`define EXE_LWL  6'b100010 // 指令 lwl 的指令码
+`define EXE_LWR  6'b100110 // 指令 lwr 的指令码
+`define EXE_SB  6'b101000 // 指令 sb 的指令码
+`define EXE_SC  6'b111000
+`define EXE_SH  6'b101001 // 指令 sh 的指令码
+`define EXE_SW  6'b101011 // 指令 sw 的指令码
+`define EXE_SWL  6'b101010 // 指令 swl 的指令码
+`define EXE_SWR  6'b101110 // 指令 swr 的指令码
 
 `define EXE_SYNC 6'b001111 // 指令 sync 的功能码
 `define EXE_PREF 6'b110011 // 指令 pref 的指令码
@@ -130,18 +144,20 @@
 `define EXE_DIV_OP  8'b00011010
 `define EXE_DIVU_OP  8'b00011011
 
-`define EXE_J_OP  8'b01001111
-`define EXE_JAL_OP  8'b01010000
-`define EXE_JALR_OP  8'b00001001
-`define EXE_JR_OP  8'b00001000
-`define EXE_BEQ_OP  8'b01010001
-`define EXE_BGEZ_OP  8'b01000001
-`define EXE_BGEZAL_OP  8'b01001011
-`define EXE_BGTZ_OP  8'b01010100
-`define EXE_BLEZ_OP  8'b01010011
-`define EXE_BLTZ_OP  8'b01000000
-`define EXE_BLTZAL_OP  8'b01001010
-`define EXE_BNE_OP  8'b01010010
+`define EXE_LB_OP  8'b11100000
+`define EXE_LBU_OP  8'b11100100
+`define EXE_LH_OP  8'b11100001
+`define EXE_LHU_OP  8'b11100101
+`define EXE_LL_OP  8'b11110000
+`define EXE_LW_OP  8'b11100011
+`define EXE_LWL_OP  8'b11100010
+`define EXE_LWR_OP  8'b11100110
+`define EXE_SB_OP  8'b11101000
+`define EXE_SC_OP  8'b11111000
+`define EXE_SH_OP  8'b11101001
+`define EXE_SW_OP  8'b11101011
+`define EXE_SWL_OP  8'b11101010
+`define EXE_SWR_OP  8'b11101110
 
 `define EXE_NOP_OP 8'b0000_0000
 
@@ -152,6 +168,7 @@
 `define EXE_RES_ARITHMETIC 3'b100	
 `define EXE_RES_MUL 3'b101
 `define EXE_RES_JUMP_BRANCH 3'b110
+`define EXE_RES_LOAD_STORE 3'b111
 
 `define EXE_RES_NOP 3'b000
 
@@ -161,6 +178,14 @@
 `define InstBus 31:0 // ROM 的数据总线宽度
 `define InstMemNum 131017 // ROM 的实际大小为 128KB
 `define InstMemNumLog2 17 // ROM 实际使用的地址线宽度
+
+// ************************** 与数据存储器 DATA_RAM 有关的宏定义 *************************
+
+`define DataAddrBus 31:0 // 地址总线宽度
+`define DataBus 31:0 // 数据总线宽度
+`define DataMemNum 131017 // RAM 的实际大小为 128KB
+`define DataMemNumLog2 17 // RAM 实际使用的地址线宽度
+`define ByteWidth 7:0 // 一个字节的宽度，8bit
 
 // *********************** 与通用寄存器 Regfile 有关的宏定义 ***********************
 
@@ -193,3 +218,16 @@
 `define NotBranch 1'b0 // 不转移
 `define InDelaySlot 1'b1 // 在延迟槽中
 `define NotInDelaySlot 1'b0 // 不在延迟槽中
+
+`define EXE_J_OP  8'b01001111
+`define EXE_JAL_OP  8'b01010000
+`define EXE_JALR_OP  8'b00001001
+`define EXE_JR_OP  8'b00001000
+`define EXE_BEQ_OP  8'b01010001
+`define EXE_BGEZ_OP  8'b01000001
+`define EXE_BGEZAL_OP  8'b01001011
+`define EXE_BGTZ_OP  8'b01010100
+`define EXE_BLEZ_OP  8'b01010011
+`define EXE_BLTZ_OP  8'b01000000
+`define EXE_BLTZAL_OP  8'b01001010
+`define EXE_BNE_OP  8'b01010010
