@@ -59,7 +59,7 @@ wire[5:0] func = inst_i[5:0]; // R func
 wire[4:0] rs = inst_i[25:21]; // rs
 wire[4:0] rt = inst_i[20:16]; // rt
 wire[4:0] rd = inst_i[15:11]; // rd
-
+   
 // 保存指令执行需要的立即数
 reg[`RegBus] imm;
 
@@ -730,6 +730,24 @@ always @( *) begin
                 alusel_o <= `EXE_RES_LOAD_STORE;
                 reg1_read_o <= `ReadEnable;
                 reg2_read_o <= `ReadEnable;
+                instvalid <= `InstValid;
+            end
+            `EXE_LL: begin // ll 指令
+                wreg_o <= `WriteEnable;
+                aluop_o <= `EXE_LL_OP;
+                alusel_o <= `EXE_RES_LOAD_STORE;
+                reg1_read_o <= `ReadEnable;
+                reg2_read_o <= `ReadDisable;
+                wd_o <= rt;
+                instvalid <= `InstValid;
+            end
+            `EXE_SC: begin // sc 指令
+                wreg_o <= `WriteEnable;
+                aluop_o <= `EXE_SC_OP;
+                alusel_o <= `EXE_RES_LOAD_STORE;
+                reg1_read_o <= `ReadEnable;
+                reg2_read_o <= `ReadEnable;
+                wd_o <= rt;
                 instvalid <= `InstValid;
             end
             default: begin

@@ -18,6 +18,11 @@ module mem(
     // 来自外部数据存储器 RAM 的信息
     input wire[`RegBus] mem_data_i, // 从数据存储器读取的数据
 
+    // 与 LLbit 模块有关的信息
+    input wire LLbit_i, // LLbit 模块给出的 LLbit 寄存器的值
+    input wire wb_LLbit_we_i, // 回写阶段的指令是否要写 LLbit 寄存器
+    input wire wb_LLbit_value_i, // 回写阶段要写入 LLbit 的值
+
     // 访存阶段的结果
     output reg[`RegAddrBus] wd_o, // 访存阶段的指令最终要写入的目的寄存器的地址
     output reg wreg_o, // 访存阶段的指令最终是否有要写入的目的寄存器
@@ -31,15 +36,32 @@ module mem(
     output wire mem_we_o, // 是否是写操作 为 1表示写操作
     output reg[3:0] mem_sel_o, // 字节选择信号
     output reg[`RegBus] mem_data_o, // 要写入数据存储器的数据
-    output reg mem_ce_o // 数据存储器使能信号
+    output reg mem_ce_o, // 数据存储器使能信号
+
+    // 与 LLbit 模块有关的信息
+    output reg LLbit_we_o, // 访存阶段的指令是否要写 LLbit 寄存器 
+    output reg LLbit_value_o
 );
 
 wire[`RegBus] zero32; 
 reg mem_we;
 
+reg LLbit; // 保存 LLbit 寄存器的最新值
+
 assign mem_we_o = mem_we; // 外部数据存储器 RAM 的度、写信号
 assign zero32 = `ZeroWord;
 
+always @( *) begin
+    if (rst == `RstEnable) begin
+        LLbit <= 1'b0;
+    end else begin
+        if (wb_LLbit_we_i) begin
+            LLbit <= wb_LLbit_value_i; // 回写阶段的指令要写 LLbit
+        end else begin
+            LLbit <= LLbit_i;
+        end
+    end
+end
 
 always @( *) begin
     if (rst == `RstEnable) begin
@@ -54,6 +76,8 @@ always @( *) begin
         mem_sel_o <= 4'b0000;
         mem_data_o <= `ZeroWord;
         mem_ce_o <= `ChipDisable;
+        LLbit_we_o <= 1'b0;
+        LLbit_value_o <= 1'b0;
     end else begin
         wd_o <= wd_i;
         wreg_o <= wreg_i;
@@ -65,6 +89,8 @@ always @( *) begin
         mem_addr_o <= `ZeroWord;
         mem_sel_o <= 4'b1111;
         mem_ce_o <= `ChipDisable; 
+        LLbit_we_o <= 1'b0;
+        LLbit_value_o <= 1'b0;
         case (aluop_i)
             `EXE_LB_OP: begin // lb 指令
                 mem_addr_o <= mem_addr_i;
@@ -305,6 +331,29 @@ always @( *) begin
                         mem_sel_o <= 4'b0000;
                     end
                 endcase
+            end
+            `EXE_LL_OP: begin // ll 指令的访存输出
+                mem_addr_o <= mem_addr_i;
+                mem_we <= `WriteDisable;
+                wdata_o <= mem_data_i;
+                LLbit_we_o <= 1'b1;
+                LLbit_value_o <= 1'b1;
+                mem_sel_o <= 4'b1111;
+                mem_ce_o <= `ChipEnable;
+            end
+            `EXE_SC_OP: begin // sc 指令的访存输出
+                if (LLbit) begin
+                    LLbit_we_o <= 1'b1;
+                    LLbit_value_o <= 1'b0;
+                    mem_addr_o <= mem_addr_i;
+                    mem_we <= `WriteEnable;
+                    mem_data_o <= reg2_i;
+                    wdata_o <= 32'b1;
+                    mem_sel_o <= 4'b1111;
+                    mem_ce_o <= `ChipEnable;
+                end else begin
+                    wdata_o <= 32'b0;
+                end
             end
             default: begin
             end  

@@ -1,4 +1,10 @@
+INFO: [VRFC 10-2263] Analyzing Verilog file "E:/competition/Loongson/OpenMIPS/LLbit_reg.v" into library xil_defaultlib
+WARNING: [VRFC 10-3507] macro 'EXE_LL' redefined [E:/competition/Loongson/OpenMIPS/defines.v:99]
+WARNING: [VRFC 10-3507] macro 'EXE_SC' redefined [E:/competition/Loongson/OpenMIPS/defines.v:100]
+INFO: [VRFC 10-311] analyzing module LLbit_reg
 INFO: [VRFC 10-2263] Analyzing Verilog file "E:/competition/Loongson/OpenMIPS/ctrl.v" into library xil_defaultlib
+WARNING: [VRFC 10-3507] macro 'EXE_LL' redefined [E:/competition/Loongson/OpenMIPS/defines.v:88]
+WARNING: [VRFC 10-3507] macro 'EXE_SC' redefined [E:/competition/Loongson/OpenMIPS/defines.v:93]
 INFO: [VRFC 10-311] analyzing module ctrl
 INFO: [VRFC 10-2263] Analyzing Verilog file "E:/competition/Loongson/OpenMIPS/data_ram.v" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module data_ram

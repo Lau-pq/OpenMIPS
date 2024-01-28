@@ -96,6 +96,9 @@
 `define EXE_SWL  6'b101010 // 指令 swl 的指令码
 `define EXE_SWR  6'b101110 // 指令 swr 的指令码
 
+`define EXE_LL 6'b110000 // 指令 ll 的指令码
+`define EXE_SC 6'b111000 // 指令 sc 的指令码  
+
 `define EXE_SYNC 6'b001111 // 指令 sync 的功能码
 `define EXE_PREF 6'b110011 // 指令 pref 的指令码
 
@@ -143,6 +146,19 @@
 
 `define EXE_DIV_OP  8'b00011010
 `define EXE_DIVU_OP  8'b00011011
+
+`define EXE_J_OP  8'b01001111
+`define EXE_JAL_OP  8'b01010000
+`define EXE_JALR_OP  8'b00001001
+`define EXE_JR_OP  8'b00001000
+`define EXE_BEQ_OP  8'b01010001
+`define EXE_BGEZ_OP  8'b01000001
+`define EXE_BGEZAL_OP  8'b01001011
+`define EXE_BGTZ_OP  8'b01010100
+`define EXE_BLEZ_OP  8'b01010011
+`define EXE_BLTZ_OP  8'b01000000
+`define EXE_BLTZAL_OP  8'b01001010
+`define EXE_BNE_OP  8'b01010010
 
 `define EXE_LB_OP  8'b11100000
 `define EXE_LBU_OP  8'b11100100
@@ -219,15 +235,3 @@
 `define InDelaySlot 1'b1 // 在延迟槽中
 `define NotInDelaySlot 1'b0 // 不在延迟槽中
 
-`define EXE_J_OP  8'b01001111
-`define EXE_JAL_OP  8'b01010000
-`define EXE_JALR_OP  8'b00001001
-`define EXE_JR_OP  8'b00001000
-`define EXE_BEQ_OP  8'b01010001
-`define EXE_BGEZ_OP  8'b01000001
-`define EXE_BGEZAL_OP  8'b01001011
-`define EXE_BGTZ_OP  8'b01010100
-`define EXE_BLEZ_OP  8'b01010011
-`define EXE_BLTZ_OP  8'b01000000
-`define EXE_BLTZAL_OP  8'b01001010
-`define EXE_BNE_OP  8'b01010010
