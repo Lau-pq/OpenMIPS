@@ -784,6 +784,23 @@ always @( *) begin
                 instvalid <= `InstValid;
             end
         end
+        if (inst_i[31:21] == 11'b010_0000_0000 && inst_i[10:0] == 11'b000_0000_0000) begin // mfc0 ЦёБо
+            wreg_o <= `WriteEnable;
+            aluop_o <= `EXE_MFC0_OP;
+            alusel_o <= `EXE_RES_MOVE;
+            wd_o <= rt;
+            reg1_read_o <= `ReadDisable;
+            reg2_read_o <= `ReadDisable;
+            instvalid <= `InstValid;
+        end else if (inst_i[31:21] == 11'b010_0000_0100 && inst_i[10:0] == 11'b000_0000_0000) begin // mtc0 ЦёБо
+            wreg_o <= `WriteDisable;
+            aluop_o <= `EXE_MTC0_OP;
+            alusel_o <= `EXE_RES_MOVE;
+            reg1_read_o <= `ReadEnable;
+            reg2_read_o <= `ReadDisable;
+            reg1_addr_o <= rt;
+            instvalid <= `InstValid;
+        end
     end
 end
 

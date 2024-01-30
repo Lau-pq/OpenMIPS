@@ -3,6 +3,8 @@
 module openmips(
     input wire clk, // 时钟信号
     input wire rst, // 复位信号
+
+    input wire[5:0] int_i, // 6个外部硬件中断输入
     
     input wire[`InstBus] rom_data_i, // 从指令存储器取得的指令
     input wire[`DataBus] ram_data_i, // 从数据存储器读取的数据
@@ -14,7 +16,9 @@ module openmips(
     output wire[`DataBus] ram_data_o, // 要写入数据存储器的数据
     output wire ram_we_o, // 是否是对数据存储器的写操作，为 1表示写操作
     output wire[3:0] ram_sel_o, // 字节选择信号
-    output wire ram_ce_o // 数据存储器使能信号
+    output wire ram_ce_o, // 数据存储器使能信号
+
+    output wire timer_int_o // 是否有定时中断发生
 );
 
 // 连接 IF/ID 模块与译码阶段 ID 模块的变量
@@ -55,6 +59,9 @@ wire[`AluOpBus] ex_aluop_o;
 wire[`InstAddrBus] ex_mem_addr_o;
 wire[`RegBus] ex_reg1_o;
 wire[`RegBus] ex_reg2_o;
+wire ex_cp0_reg_we_o;
+wire[4:0] ex_cp0_reg_write_addr_o;
+wire[`RegBus] ex_cp0_reg_data_o;
 
 // 连接 EX/MEM 模块的输出与访存阶段 MEM 模块的输入的变量
 wire mem_wreg_i;
@@ -67,6 +74,9 @@ wire[`AluOpBus] mem_aluop_i;
 wire[`InstAddrBus] mem_mem_addr_i;
 wire[`RegBus] mem_reg1_i;
 wire[`RegBus] mem_reg2_i;
+wire mem_cp0_reg_we_i;
+wire[4:0] mem_cp0_reg_write_addr_i;
+wire[`RegBus] mem_cp0_reg_data_i;
 
 // 连接访存阶段 MEM 模块的输出与 MEM/WB 模块的输入的变量
 wire mem_wreg_o;
@@ -77,6 +87,9 @@ wire[`RegBus] mem_lo_o;
 wire mem_whilo_o;
 wire mem_LLbit_value_o;
 wire mem_LLbit_we_o;
+wire mem_cp0_reg_we_o;
+wire[4:0] mem_cp0_reg_write_addr_o;
+wire[`RegBus] mem_cp0_reg_data_o;
 
 // 连接 MEM/WB 模块的输出与回写阶段的输入的变量
 wire wb_wreg_i;
@@ -86,7 +99,10 @@ wire[`RegBus] wb_hi_i;
 wire[`RegBus] wb_lo_i;
 wire wb_whilo_i;
 wire wb_LLbit_value_i;
-	wire wb_LLbit_we_i;
+wire wb_LLbit_we_i;
+wire wb_cp0_reg_we_i;
+wire[4:0] wb_cp0_reg_write_addr_i;
+wire[`RegBus] wb_cp0_reg_data_i;
 
 // 连接译码阶段 ID 模块与通用寄存器 Regfile 模块的变量
 wire reg1_read;
@@ -286,6 +302,24 @@ ex ex0(
     .div_result_i(div_result),
 	.div_ready_i(div_ready), 
 
+    //访存阶段的指令是否要写 CP0，用来检测数据相关
+  	.mem_cp0_reg_we(mem_cp0_reg_we_o),
+	.mem_cp0_reg_write_addr(mem_cp0_reg_write_addr_o),
+	.mem_cp0_reg_data(mem_cp0_reg_data_o),
+	
+	//回写阶段的指令是否要写CP0，用来检测数据相关
+  	.wb_cp0_reg_we(wb_cp0_reg_we_i),
+	.wb_cp0_reg_write_addr(wb_cp0_reg_write_addr_i),
+	.wb_cp0_reg_data(wb_cp0_reg_data_i),
+
+	.cp0_reg_data_i(cp0_data_o),
+	.cp0_reg_read_addr_o(cp0_raddr_i),
+		
+	//向下一流水级传递，用于写CP0中的寄存器
+	.cp0_reg_we_o(ex_cp0_reg_we_o),
+	.cp0_reg_write_addr_o(ex_cp0_reg_write_addr_o),
+	.cp0_reg_data_o(ex_cp0_reg_data_o),	
+
     // 输出到 EX/MEM 模块的信息
     .wd_o(ex_wd_o), 
     .wreg_o(ex_wreg_o), 
@@ -332,6 +366,10 @@ ex_mem ex_mem0(
 	.ex_mem_addr(ex_mem_addr_o),
 	.ex_reg2(ex_reg2_o),
 
+    .ex_cp0_reg_we(ex_cp0_reg_we_o),
+	.ex_cp0_reg_write_addr(ex_cp0_reg_write_addr_o),
+	.ex_cp0_reg_data(ex_cp0_reg_data_o),
+
     // 送到访存阶段 MEM 模块的信息
     .mem_wd(mem_wd_i), 
     .mem_wreg(mem_wreg_i), 
@@ -343,6 +381,10 @@ ex_mem ex_mem0(
     .mem_aluop(mem_aluop_i),
 	.mem_mem_addr(mem_mem_addr_i),
 	.mem_reg2(mem_reg2_i),
+
+    .mem_cp0_reg_we(mem_cp0_reg_we_i),
+	.mem_cp0_reg_write_addr(mem_cp0_reg_write_addr_i),
+	.mem_cp0_reg_data(mem_cp0_reg_data_i),
     
     // 送到 EX 模块的信息
     .hilo_o(hilo_temp_i),
@@ -365,6 +407,11 @@ mem mem0(
 	.mem_addr_i(mem_mem_addr_i),
 	.reg2_i(mem_reg2_i),
 
+    .cp0_reg_we_i(mem_cp0_reg_we_i),
+	.cp0_reg_write_addr_i(mem_cp0_reg_write_addr_i),
+	.cp0_reg_data_i(mem_cp0_reg_data_i),
+
+
     // 来自数据存储器的信息
     .mem_data_i(ram_data_i), 
 
@@ -384,6 +431,10 @@ mem mem0(
     .hi_o(mem_hi_o), 
     .lo_o(mem_lo_o), 
     .whilo_o(mem_whilo_o), 
+
+    .cp0_reg_we_o(mem_cp0_reg_we_o),
+	.cp0_reg_write_addr_o(mem_cp0_reg_write_addr_o),
+	.cp0_reg_data_o(mem_cp0_reg_data_o),
 
     // 送到数据存储器的信息
     .mem_addr_o(ram_addr_o), 
@@ -409,6 +460,10 @@ mem_wb mem_wb0(
     .mem_LLbit_we(mem_LLbit_we_o),
 	.mem_LLbit_value(mem_LLbit_value_o),
 
+    .mem_cp0_reg_we(mem_cp0_reg_we_o),
+	.mem_cp0_reg_write_addr(mem_cp0_reg_write_addr_o),
+	.mem_cp0_reg_data(mem_cp0_reg_data_o),
+
     // 送到回写阶段的信息
     .wb_wd(wb_wd_i), 
     .wb_wreg(wb_wreg_i), 
@@ -417,7 +472,11 @@ mem_wb mem_wb0(
     .wb_lo(wb_lo_i), 
     .wb_whilo(wb_whilo_i), 
     .wb_LLbit_we(wb_LLbit_we_i),
-	.wb_LLbit_value(wb_LLbit_value_i)
+	.wb_LLbit_value(wb_LLbit_value_i),
+
+    .wb_cp0_reg_we(wb_cp0_reg_we_i),
+	.wb_cp0_reg_write_addr(wb_cp0_reg_write_addr_i),
+	.wb_cp0_reg_data(wb_cp0_reg_data_i)
 );
 
 hilo_reg hilo_reg0(
@@ -467,5 +526,20 @@ LLbit_reg LLbit_reg0(
 	//读端口
 	.LLbit_o(LLbit_o)
 	);
+
+cp0_reg cp0_reg0(
+	.clk(clk),
+	.rst(rst),
+		
+	.we_i(wb_cp0_reg_we_i),
+	.waddr_i(wb_cp0_reg_write_addr_i),
+	.raddr_i(cp0_raddr_i),
+	.data_i(wb_cp0_reg_data_i),		
+	.int_i(int_i),
+
+	.data_o(cp0_data_o),
+	.timer_int_o(timer_int_o)  			
+	);
+
 
 endmodule

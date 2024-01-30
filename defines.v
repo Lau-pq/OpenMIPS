@@ -15,6 +15,8 @@
 `define False_v 1'b0 // 逻辑‘假’
 `define ChipEnable 1'b1 // 芯片使能
 `define ChipDisable 1'b0 // 芯片禁止
+`define InterruptAssert 1'b1 // 发生中断
+`define InterruptNotAssert 1'b0 // 未发生中断
 
 // **************************** 与具体指令有关的宏定义 ****************************
 `define EXE_AND 6'b100100 // 指令 and 的功能码
@@ -175,6 +177,9 @@
 `define EXE_SWL_OP  8'b11101010
 `define EXE_SWR_OP  8'b11101110
 
+`define EXE_MFC0_OP 8'b01011101
+`define EXE_MTC0_OP 8'b01100000
+
 `define EXE_NOP_OP 8'b0000_0000
 
 // AluSel
@@ -234,4 +239,13 @@
 `define NotBranch 1'b0 // 不转移
 `define InDelaySlot 1'b1 // 在延迟槽中
 `define NotInDelaySlot 1'b0 // 不在延迟槽中
+
+// 定义 CP0 中各个寄存器的地址
+`define CP0_REG_COUNT 5'b01001 //可读写
+`define CP0_REG_COMPARE 5'b01011 //可读写
+`define CP0_REG_STATUS 5'b01100 //可读写
+`define CP0_REG_CAUSE 5'b01101 //只读
+`define CP0_REG_EPC 5'b01110 //可读写
+`define CP0_REG_PRId 5'b01111 //只读
+`define CP0_REG_CONFIG 5'b10000 //只读
 

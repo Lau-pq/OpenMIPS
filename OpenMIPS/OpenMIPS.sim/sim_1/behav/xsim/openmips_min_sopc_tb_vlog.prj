@@ -1,6 +1,7 @@
 # compile verilog/system verilog design source files
 verilog xil_defaultlib  \
 "../../../../../LLbit_reg.v" \
+"../../../../../cp0_reg.v" \
 "../../../../../ctrl.v" \
 "../../../../../data_ram.v" \
 "../../../../../div.v" \

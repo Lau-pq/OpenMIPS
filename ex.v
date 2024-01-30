@@ -35,6 +35,25 @@ module ex(
 
     input wire[`RegBus] inst_i, // 当前处于执行阶段的指令
 
+    // 访存阶段的指令是否要写 CP0 中的寄存器，用来检测数据相关
+    input wire mem_cp0_reg_we, // 访存阶段的指令是否要写 CP0 中的寄存器
+    input wire[4:0] mem_cp0_reg_write_addr, // 访存阶段的指令要写的 CP0 中寄存器的地址
+    input wire[`RegBus] mem_cp0_reg_data, // 访存阶段的指令要写入 CP0 中寄存器的数据
+
+    // 回写阶段的指令是否要写 CP0 中的寄存器，用来检测数据相关
+    input wire wb_cp0_reg_we, // 访存阶段的指令是否要写 CP0 中的寄存器
+    input wire[4:0] wb_cp0_reg_write_addr, // 访存阶段的指令要写的 CP0 中寄存器的地址
+    input wire[`RegBus] wb_cp0_reg_data, // 访存阶段的指令要写入 CP0 中寄存器的数据
+
+    // 与 CP0 直接相连，用于读取其中指定寄存器的值
+    input wire[`RegBus] cp0_reg_data_i, 
+    output reg[4:0] cp0_reg_read_addr_o, 
+
+    // 向流水线下一级传递，用于写 CP0 中的指定寄存器
+    output reg cp0_reg_we_o, 
+    output reg[4:0] cp0_reg_write_addr_o, 
+    output reg[`RegBus] cp0_reg_data_o,  
+
     // 处于执行阶段的指令对 HI、LO寄存器的写操作请求
     output reg[`RegBus] hi_o, // 执行阶段的指令要写入 HI 寄存器的值
     output reg[`RegBus] lo_o, // 执行阶段的指令要写入 LO 寄存器的值
@@ -201,6 +220,16 @@ always @( *) begin
             end
             `EXE_MOVN_OP: begin // movn 指令，将 reg1_i 的值(rs)作为移动操作的结果
                 moveres <= reg1_i;
+            end
+            `EXE_MFC0_OP: begin
+                cp0_reg_read_addr_o <= inst_i[15:11]; // 要从 CP0 中读取的寄存器的地址
+                moveres <= cp0_reg_data_i; // 读取到的 CP0 中指定寄存器的值
+
+                if (mem_cp0_reg_we == `WriteEnable && mem_cp0_reg_write_addr == inst_i[15:11]) begin // 判断是否存在数据相关
+                    moveres <= mem_cp0_reg_data; // 与访存阶段存在数据相关
+                end else if (wb_cp0_reg_we == `WriteEnable && wb_cp0_reg_write_addr == inst_i[15:11]) begin
+                    moveres <= wb_cp0_reg_data; // 与回写阶段存在数据相关
+                end
             end
             default: begin
                 moveres <= `ZeroWord;
@@ -475,6 +504,23 @@ end
 // **************** 暂停流水线 *****************
 always @( *) begin
     stallreq = stallreq_for_madd_msub || stallreq_for_div;
+end
+
+// ************** 给出 mtc0 指令的执行效果 ****************
+always @( *) begin
+    if (rst == `RstEnable) begin
+        cp0_reg_write_addr_o <= 5'b00000;
+        cp0_reg_we_o <= `WriteDisable;
+        cp0_reg_data_o <= `ZeroWord;
+    end else if (aluop_i == `EXE_MTC0_OP) begin // 是 mtc0 指令
+        cp0_reg_write_addr_o <= inst_i[15:11];
+        cp0_reg_we_o <= `WriteEnable;
+        cp0_reg_data_o <= reg1_i;
+    end else begin
+        cp0_reg_write_addr_o <= 5'b00000;
+        cp0_reg_we_o <= `WriteDisable;
+        cp0_reg_data_o <= `ZeroWord;
+    end
 end
 
 endmodule

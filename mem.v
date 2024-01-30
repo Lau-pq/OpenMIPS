@@ -15,6 +15,10 @@ module mem(
     input wire[`RegBus] mem_addr_i, // 访存阶段的加载、存储指令对应的存储器地址
     input wire[`RegBus] reg2_i, // 访存阶段的存储指令要存储的数据，或者 lwl、lwr 指令要写入的目的寄存器的原始值
 
+    input wire cp0_reg_we_i, // 访存阶段的指令是否要写 CP0 中的寄存器
+    input wire[4:0] cp0_reg_write_addr_i, // 访存阶段的指令最终要写的 CP0 中寄存器的地址
+    input wire[`RegBus] cp0_reg_data_i, // 访存阶段的指令最终要写入 CP0 中寄存器的数据
+
     // 来自外部数据存储器 RAM 的信息
     input wire[`RegBus] mem_data_i, // 从数据存储器读取的数据
 
@@ -31,6 +35,10 @@ module mem(
     output reg[`RegBus] lo_o, // 访存阶段的指令最终要写入 LO 寄存器的值
     output reg[`RegBus] whilo_o, // 访存阶段的指令最终是否要写 HI、LO 寄存器
 
+    output reg cp0_reg_we_o , // 访存阶段的指令最终是否要写 CP0 中的寄存器
+    output reg[4:0] cp0_reg_write_addr_o, // 访存阶段的指令最终要写入 CP0 中寄存器的数据
+    output reg[`RegBus] cp0_reg_data_o, // 访存阶段的指令最终要写的 CP0 寄存器的地址
+    
     // 送到外部数据存储器 RAM 的信息
     output reg[`RegBus] mem_addr_o, // 要访问的数据存储器的地址
     output wire mem_we_o, // 是否是写操作 为 1表示写操作
@@ -78,6 +86,9 @@ always @( *) begin
         mem_ce_o <= `ChipDisable;
         LLbit_we_o <= 1'b0;
         LLbit_value_o <= 1'b0;
+        cp0_reg_we_o <= `WriteDisable;
+        cp0_reg_write_addr_o <= 5'b00000;
+        cp0_reg_data_o <= `ZeroWord;
     end else begin
         wd_o <= wd_i;
         wreg_o <= wreg_i;
@@ -91,6 +102,11 @@ always @( *) begin
         mem_ce_o <= `ChipDisable; 
         LLbit_we_o <= 1'b0;
         LLbit_value_o <= 1'b0;
+        
+        // 将对 CP0 中寄存器的写信息传递到流水线下一级
+        cp0_reg_we_o <= cp0_reg_we_i;
+        cp0_reg_write_addr_o <= cp0_reg_write_addr_i;
+        cp0_reg_data_o <= cp0_reg_data_i;
         case (aluop_i)
             `EXE_LB_OP: begin // lb 指令
                 mem_addr_o <= mem_addr_i;

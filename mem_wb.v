@@ -10,7 +10,11 @@ module mem_wb(
     input wire[`RegBus] mem_wdata, // 访存阶段的指令最终要写入目的寄存器的值
     input wire[`RegBus] mem_hi, // 访存阶段的指令要写入 HI 寄存器的值
     input wire[`RegBus] mem_lo, // 访存阶段的指令要写入 LO 寄存器的值
-    input wire mem_whilo, // 访存阶段的指令是否要写 HI、LO寄存器    
+    input wire mem_whilo, // 访存阶段的指令是否要写 HI、LO寄存器  
+
+    input wire mem_cp0_reg_we, // 访存阶段的指令是否要写 CP0 中的寄存器
+    input wire[4:0] mem_cp0_reg_write_addr, // 访存阶段的指令要写的 CP0 中寄存器的地址
+    input wire[`RegBus] mem_cp0_reg_data, // 访存阶段的指令要写入 CP0 中寄存器的数据 
 
     // 来自控制模块的信息
     input wire[`StallBus] stall, 
@@ -27,6 +31,10 @@ module mem_wb(
     output reg[`RegBus] wb_lo, // 回写阶段的指令要写入 LO 寄存器的值
     output reg wb_whilo, // 回写阶段的指令是否要写 HI、LO寄存器 
 
+    output reg wb_cp0_reg_we, // 回写阶段的指令是否要写 CP0 中的寄存器
+    output reg[4:0] wb_cp0_reg_write_addr, // 回写阶段的指令要写的 CP0 中的寄存器的地址
+    output reg[`RegBus] wb_cp0_reg_data, // 回写阶段的指令要写入 CP0 中寄存器的数据
+
     // 与 LLbit 模块有关的信息
     output reg wb_LLbit_we, // 回写阶段的指令是否要写 LLbit 寄存器
     output reg wb_LLbit_value // 回写阶段的指令要写入 LLbit 寄存器的值
@@ -42,6 +50,9 @@ always @(posedge clk) begin
         wb_whilo <= `WriteDisable;
         wb_LLbit_we <= 1'b0;
         wb_LLbit_value <= 1'b0;
+        wb_cp0_reg_we <= `WriteDisable;
+        wb_cp0_reg_write_addr <= 5'b00000;
+        wb_cp0_reg_data <= `ZeroWord;
     end else if ((stall[4] == `Stop) && (stall[5] == `NoStop)) begin // 访存暂停 回写继续 空指令
         wb_wd <= `NOPRegAddr;
         wb_wreg <= `WriteDisable;
@@ -51,6 +62,9 @@ always @(posedge clk) begin
         wb_whilo <= `WriteDisable;
         wb_LLbit_we <= 1'b0;
         wb_LLbit_value <= 1'b0;
+        wb_cp0_reg_we <= `WriteDisable;
+        wb_cp0_reg_write_addr <= 5'b00000;
+        wb_cp0_reg_data <= `ZeroWord;
     end else if (stall[4] == `NoStop) begin // 访存继续
         wb_wd <= mem_wd;
         wb_wreg <= mem_wreg;
@@ -60,6 +74,9 @@ always @(posedge clk) begin
         wb_whilo <= mem_whilo;
         wb_LLbit_we <= mem_LLbit_we;
         wb_LLbit_value <= mem_LLbit_value;
+        wb_cp0_reg_we <= mem_cp0_reg_we;
+        wb_cp0_reg_write_addr <= mem_cp0_reg_write_addr;
+        wb_cp0_reg_data <= mem_cp0_reg_data;
     end
 end
 
