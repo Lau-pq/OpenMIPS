@@ -1,10 +1,10 @@
 INFO: [VRFC 10-2263] Analyzing Verilog file "E:/competition/Loongson/OpenMIPS/LLbit_reg.v" into library xil_defaultlib
-WARNING: [VRFC 10-3507] macro 'EXE_LL' redefined [E:/competition/Loongson/OpenMIPS/defines.v:101]
-WARNING: [VRFC 10-3507] macro 'EXE_SC' redefined [E:/competition/Loongson/OpenMIPS/defines.v:102]
+WARNING: [VRFC 10-3507] macro 'EXE_LL' redefined [E:/competition/Loongson/OpenMIPS/defines.v:103]
+WARNING: [VRFC 10-3507] macro 'EXE_SC' redefined [E:/competition/Loongson/OpenMIPS/defines.v:104]
 INFO: [VRFC 10-311] analyzing module LLbit_reg
 INFO: [VRFC 10-2263] Analyzing Verilog file "E:/competition/Loongson/OpenMIPS/cp0_reg.v" into library xil_defaultlib
-WARNING: [VRFC 10-3507] macro 'EXE_LL' redefined [E:/competition/Loongson/OpenMIPS/defines.v:90]
-WARNING: [VRFC 10-3507] macro 'EXE_SC' redefined [E:/competition/Loongson/OpenMIPS/defines.v:95]
+WARNING: [VRFC 10-3507] macro 'EXE_LL' redefined [E:/competition/Loongson/OpenMIPS/defines.v:92]
+WARNING: [VRFC 10-3507] macro 'EXE_SC' redefined [E:/competition/Loongson/OpenMIPS/defines.v:97]
 INFO: [VRFC 10-311] analyzing module cp0_reg
 INFO: [VRFC 10-2263] Analyzing Verilog file "E:/competition/Loongson/OpenMIPS/ctrl.v" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module ctrl
@@ -32,8 +32,6 @@ INFO: [VRFC 10-2263] Analyzing Verilog file "E:/competition/Loongson/OpenMIPS/me
 INFO: [VRFC 10-311] analyzing module mem_wb
 INFO: [VRFC 10-2263] Analyzing Verilog file "E:/competition/Loongson/OpenMIPS/openmips.v" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module openmips
-INFO: [VRFC 10-2458] undeclared symbol cp0_data_o, assumed default net type wire [E:/competition/Loongson/OpenMIPS/openmips.v:315]
-INFO: [VRFC 10-2458] undeclared symbol cp0_raddr_i, assumed default net type wire [E:/competition/Loongson/OpenMIPS/openmips.v:316]
 INFO: [VRFC 10-2263] Analyzing Verilog file "E:/competition/Loongson/OpenMIPS/openmips_min_sopc.v" into library xil_defaultlib
 INFO: [VRFC 10-311] analyzing module openmips_min_sopc
 INFO: [VRFC 10-2263] Analyzing Verilog file "E:/competition/Loongson/OpenMIPS/pc_reg.v" into library xil_defaultlib

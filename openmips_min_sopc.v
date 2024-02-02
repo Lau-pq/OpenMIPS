@@ -20,7 +20,7 @@ wire mem_ce_i;
 wire[5:0] int;
 wire timer_int;
 
-assign int = {5'b00000, timer_int};
+assign int = {5'b00000, timer_int}; // 时钟中断输出作为一个中断输出
 
 // 例化处理器 OpenMIPS
 openmips openmips0(
@@ -31,7 +31,7 @@ openmips openmips0(
     .rom_data_i(inst), 
     .rom_ce_o(rom_ce), 
 
-	.int_i(int),
+	.int_i(int), // 中断输出
 
     .ram_we_o(mem_we_i),
 	.ram_addr_o(mem_addr_i),
@@ -40,7 +40,7 @@ openmips openmips0(
 	.ram_data_i(mem_data_o),
 	.ram_ce_o(mem_ce_i), 
 	
-	.timer_int_o(timer_int)
+	.timer_int_o(timer_int) // 时钟中断输出
 );
 
 // 例化指令存储器 ROM

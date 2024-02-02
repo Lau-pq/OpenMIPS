@@ -48,7 +48,10 @@ module id(
     output reg is_in_delayslot_o, // 当前处于译码阶段的指令是否位于延迟槽
 
     output wire[`RegBus] inst_o, // 当前处于译码阶段的指令 
-    output wire stallreq // 流水线是否需要暂停
+    output wire stallreq, // 流水线是否需要暂停
+
+    output wire[31:0] excepttype_o, // 收集的异常信息
+    output wire[`RegBus] current_inst_address_o // 译码阶段指令的地址
 );
 
 // 取得指令的指令码，功能码
@@ -80,6 +83,12 @@ assign pc_plus_8 = pc_i + 8; // 保存当前译码阶段指令后面第 2条指令的地址
 assign pc_plus_4 = pc_i + 4; // 保存当前译码阶段指令后面紧接着的指令的地址
 // imm_sll2_signedext 对应分支指令 offset 左移两位，再符号扩展到 32位
 assign imm_sll2_signedext = {{14{inst_i[15]}}, inst_i[15:0], 2'b00}; 
+
+reg excepttype_is_syscall; // 是否是系统调用异常 syscall
+reg excepttype_is_eret; // 是否是异常返回指令 eret
+
+assign excepttype_o = {19'b0, excepttype_is_eret, 2'b0,instvalid, excepttype_is_syscall, 8'b0};
+assign current_inst_address_o = pc_i; // 输入信号 pc_i 就是当前处于译码阶段指令的地址
 
 
 // 流水线是否需要暂停
@@ -114,12 +123,14 @@ always @( *) begin
         branch_target_address_o <= `ZeroWord;
         branch_flag_o <= `NotBranch;
         next_inst_in_delayslot_o <= `NotInDelaySlot;
+        excepttype_is_syscall <= `False_v; // 默认没有系统调用异常
+        excepttype_is_eret <= `False_v; // 默认不是 eret 指令 
     end else begin
         aluop_o <= `EXE_NOP_OP;
         alusel_o <= `EXE_RES_NOP;
         wd_o <= rd; // rd
         wreg_o <= `WriteDisable;
-        instvalid <= `InstInvalid;
+        instvalid <= `InstInvalid; // 默认是无效指令
         reg1_read_o <= `ReadDisable;
         reg2_read_o <= `ReadDisable;
         reg1_addr_o <= rs; // rs 默认通过 Regfile 读端口1 读取的寄存器地址
@@ -129,6 +140,8 @@ always @( *) begin
         branch_target_address_o <= `ZeroWord;
         branch_flag_o <= `NotBranch;
         next_inst_in_delayslot_o <= `NotInDelaySlot;
+        excepttype_is_syscall <= `False_v; // 默认没有系统调用异常
+        excepttype_is_eret <= `False_v; // 默认不是 eret 指令 
 
         case (op)
             `EXE_SPECIAL_INST: begin
@@ -359,6 +372,68 @@ always @( *) begin
                     default: begin
                     end  
                 endcase
+
+                case (func)
+                    `EXE_TEQ: begin // teq 指令
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_TEQ_OP;
+                        alusel_o <= `EXE_RES_NOP;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadEnable;
+                        instvalid <= `InstValid;
+                    end
+                    `EXE_TGE: begin // tge 指令
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_TGE_OP;
+                        alusel_o <= `EXE_RES_NOP;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadEnable;
+                        instvalid <= `InstValid;
+                    end
+                    `EXE_TGEU: begin // tgeu 指令
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_TGEU_OP;
+                        alusel_o <= `EXE_RES_NOP;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadEnable;
+                        instvalid <= `InstValid;
+                    end
+                    `EXE_TLT: begin // tlt 指令
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_TLT_OP;
+                        alusel_o <= `EXE_RES_NOP;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadEnable;
+                        instvalid <= `InstValid;
+                    end
+                    `EXE_TLTU: begin // tltu 指令
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_TLTU_OP;
+                        alusel_o <= `EXE_RES_NOP;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadEnable;
+                        instvalid <= `InstValid;
+                    end
+                    `EXE_TNE: begin // tne 指令
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_TNE_OP;
+                        alusel_o <= `EXE_RES_NOP;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadEnable;
+                        instvalid <= `InstValid;
+                    end
+                    `EXE_SYSCALL: begin // syscall 指令
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_SYSCALL_OP;
+                        alusel_o <= `EXE_RES_NOP;
+                        reg1_read_o <= `ReadDisable;
+                        reg2_read_o <= `ReadDisable;
+                        instvalid <= `InstValid;
+                        excepttype_is_syscall <= `True_v;
+                    end
+                    default: begin
+                    end
+                endcase
             end
             `EXE_ORI: begin // ori 指令
                 wreg_o <= `WriteEnable;
@@ -551,7 +626,7 @@ always @( *) begin
                             next_inst_in_delayslot_o <= `InDelaySlot;
                         end
                     end
-                    `EXE_BLTZAL: begin
+                    `EXE_BLTZAL: begin // bltzal 指令
                         wreg_o <= `WriteEnable;
                         alusel_o <= `EXE_RES_JUMP_BRANCH;
                         reg1_read_o <= `ReadEnable;
@@ -564,6 +639,60 @@ always @( *) begin
                             branch_flag_o <= `Branch;
                             next_inst_in_delayslot_o <= `InDelaySlot;
                         end
+                    end
+                    `EXE_TEQI: begin // teqi 指令
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_TEQI_OP;
+                        alusel_o <= `EXE_RES_NOP;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadDisable;
+                        imm <= {{16{inst_i[15]}}, inst_i[15:0]};
+                        instvalid <= `InstValid;
+                    end
+                    `EXE_TGEI: begin // tgei 指令
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_TGEI_OP;
+                        alusel_o <= `EXE_RES_NOP;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadDisable;
+                        imm <= {{16{inst_i[15]}}, inst_i[15:0]};
+                        instvalid <= `InstValid;
+                    end
+                    `EXE_TGEIU: begin // tgeiu 指令
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_TGEIU_OP;
+                        alusel_o <= `EXE_RES_NOP;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadDisable;
+                        imm <= {{16{inst_i[15]}}, inst_i[15:0]};
+                        instvalid <= `InstValid;
+                    end
+                    `EXE_TLTI: begin // tlti 指令
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_TLTI_OP;
+                        alusel_o <= `EXE_RES_NOP;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadDisable;
+                        imm <= {{16{inst_i[15]}}, inst_i[15:0]};
+                        instvalid <= `InstValid;
+                    end
+                    `EXE_TLTIU: begin // tltiu 指令
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_TLTIU_OP;
+                        alusel_o <= `EXE_RES_NOP;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadDisable;
+                        imm <= {{16{inst_i[15]}}, inst_i[15:0]};
+                        instvalid <= `InstValid;
+                    end
+                    `EXE_TNEI: begin // tnei 指令
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_TNEI_OP;
+                        alusel_o <= `EXE_RES_NOP;
+                        reg1_read_o <= `ReadEnable;
+                        reg2_read_o <= `ReadDisable;
+                        imm <= {{16{inst_i[15]}}, inst_i[15:0]};
+                        instvalid <= `InstValid;
                     end
                 endcase
             end
@@ -753,6 +882,16 @@ always @( *) begin
             default: begin
             end
         endcase
+
+        if (inst_i == `EXE_ERET) begin // eret 指令
+            wreg_o <= `WriteDisable;
+            aluop_o <= `EXE_ERET_OP;
+            alusel_o <= `EXE_RES_NOP;
+            reg1_read_o <= `ReadDisable;
+            reg2_read_o <= `ReadDisable;
+            instvalid <= `InstValid;
+            excepttype_is_eret <= `True_v;
+        end
 
         if (inst_i[31:21] == 11'b000_0000_0000) begin
             if (func == `EXE_SLL) begin // sll 指令

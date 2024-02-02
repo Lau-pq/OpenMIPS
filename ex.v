@@ -9,6 +9,10 @@ module ex(
     input wire[`RegAddrBus] wd_i, // 指令执行要写入的目的寄存器地址
     input wire wreg_i,  // 是否有要写入的目的寄存器
 
+    // 关于异常
+    input wire[31:0] excepttype_i, // 译码阶段收集到的异常信息
+    input wire[`RegBus] current_inst_address_i, // 执行阶段指令的地址
+
     // HILO 模块给出的 HI、LO 寄存器的值
     input wire[`RegBus] hi_i, // HILO 模块给出的 HI 寄存器的值
     input wire[`RegBus] lo_i, // HILO 模块给出的 LO 寄存器的值
@@ -77,7 +81,12 @@ module ex(
     // 为加载、存储指令准备的
     output wire[`AluOpBus] aluop_o, // 执行阶段的指令要进行的运算子类型
     output wire[`RegBus] mem_addr_o, // 加载、存储指令对应的存储器地址
-    output wire[`RegBus] reg2_o // 存储指令要存储的数据，或者 lwl、lwr 指令要加载到的目的寄存器的原始值
+    output wire[`RegBus] reg2_o, // 存储指令要存储的数据，或者 lwl、lwr 指令要加载到的目的寄存器的原始值
+
+    // 关于异常
+    output wire[31:0] excepttype_o, // 译码阶段、执行阶段收集到的异常信息
+    output wire is_in_delayslot_o, // 执行阶段的指令是否是延迟槽指令
+    output wire[`RegBus] current_inst_address_o // 执行阶段指令的地址
 );
 
 reg[`RegBus] logicout; // 保存逻辑运算的结果
@@ -101,12 +110,24 @@ reg[`DoubleRegBus] hilo_temp1; // 最终运算结果
 reg stallreq_for_madd_msub; // 是否由于乘累加、乘累减运算导致流水线暂停
 reg stallreq_for_div; // 是否由于除法运算导致流水线暂停
 
+reg trapassert; // 表示是否有自陷异常
+reg ovassert; // 表示是否有溢出异常
+
+// 第 10 bit 表示是否有自陷异常，第 11 bit 表示是否有溢出异常
+assign excepttype_o = {excepttype_i[31:12], ovassert, trapassert, excepttype_i[9:8], 8'h00};
+assign is_in_delayslot_o = is_in_delayslot_i;
+assign current_inst_address_o = current_inst_address_i;
+
 // ******************** 计算变量的值 ***********************
 // 减法 或 有符号比较 reg2_i_mux 为 reg2_i 补码，否则为 reg2_i
 assign reg2_i_mux = (
     (aluop_i == `EXE_SUB_OP) || 
     (aluop_i == `EXE_SUBU_OP) || 
-    (aluop_i == `EXE_SLT_OP)) ? 
+    (aluop_i == `EXE_SLT_OP) ||
+    (aluop_i == `EXE_TLT_OP) || 
+    (aluop_i == `EXE_TLTI_OP) || 
+    (aluop_i == `EXE_TGE_OP) ||
+    (aluop_i == `EXE_TGEI_OP)) ? 
     (~reg2_i)+1 : reg2_i;  
 
 // 加法 result_sum 为加法运算结果
@@ -123,8 +144,12 @@ assign ov_sum =
     (!result_sum[31])); // 两者之和为正数
 
 // 计算操作数 1是否小于操作数 2
-assign reg1_lt_reg2 = 
-    ((aluop_i == `EXE_SLT_OP)) ? // 有符号比较运算
+assign reg1_lt_reg2 = (
+    (aluop_i == `EXE_SLT_OP) ||
+    (aluop_i == `EXE_TLT_OP) ||
+    (aluop_i == `EXE_TLTI_OP) ||
+    (aluop_i == `EXE_TGE_OP) ||
+    (aluop_i == `EXE_TGEI_OP)) ? // 有符号比较运算
     ((reg1_i[31] && !reg2_i[31]) || // reg1_i负, reg2_i正, reg1_i < reg2_i
     (!reg1_i[31] && !reg2_i[31] && result_sum[31]) || // reg1_i正, reg2_i正, 差 < 0
     (reg1_i[31] && reg2_i[31] && result_sum[31])) // reg1_i负, reg2_i负, 差 < 0
@@ -471,10 +496,12 @@ end
 // ***************** 依据 alusel_i 指示的运算类型，选择一个运算结果作为最终结果 ****************
 always @( *) begin
     wd_o <= wd_i; // wd_o 等于 wd_i，要写的目的寄存器地址
-    if (((aluop_i == `EXE_ADD_OP) || (aluop_i == `EXE_ADDI_OP) || (aluop_i == `EXE_SUB_OP)) && (ov_sum)) begin
+    if (((aluop_i == `EXE_ADD_OP) || (aluop_i == `EXE_ADDI_OP) || (aluop_i == `EXE_SUB_OP)) && (ov_sum == 1'b1)) begin
         wreg_o <= `WriteDisable; // add、addi、sub 指令发生溢出, 不写目的寄存器 
+        ovassert <= 1'b1; // 发生了溢出异常
     end else begin
-        wreg_o <= wreg_i; // wreg_o 等于 wreg_i，表示是否要写目的寄存器        
+        wreg_o <= wreg_i; // wreg_o 等于 wreg_i，表示是否要写目的寄存器 
+        ovassert <= 1'b0; // 未发生溢出异常       
     end
     case (alusel_i)
         `EXE_RES_LOGIC: begin
@@ -520,6 +547,44 @@ always @( *) begin
         cp0_reg_write_addr_o <= 5'b00000;
         cp0_reg_we_o <= `WriteDisable;
         cp0_reg_data_o <= `ZeroWord;
+    end
+end
+
+// ************** 判断是否发生自陷异常 ******************
+always @( *) begin
+    if (rst == `RstEnable) begin
+        trapassert <= `TrapNotAssert;
+    end else begin
+        trapassert <= `TrapNotAssert; // 默认没有自陷异常
+        case (aluop_i)
+            // teq、teqi 指令
+            `EXE_TEQ_OP, `EXE_TEQI_OP: begin 
+                if (reg1_i == reg2_i) begin
+                    trapassert <= `TrapAssert;
+                end
+            end
+            // tge、tgei、tgeiu、tgeu 指令
+            `EXE_TGE_OP, `EXE_TGEI_OP, `EXE_TGEIU_OP, `EXE_TGEU_OP: begin 
+                if (~reg1_lt_reg2) begin
+                    trapassert <= `TrapAssert;
+                end
+            end
+            // tlt、tlti、tltiu、tltu 指令
+            `EXE_TLT_OP, `EXE_TLTI_OP, `EXE_TLTIU_OP, `EXE_TLTU_OP: begin 
+                if (reg1_lt_reg2) begin
+                    trapassert <= `TrapAssert;
+                end
+            end
+            // tne、tnei 指令
+            `EXE_TNE_OP, `EXE_TNEI_OP: begin
+                if (reg1_i != reg2_i) begin
+                    trapassert <= `TrapAssert;
+                end
+            end
+            default: begin
+                trapassert <= `TrapNotAssert;
+            end  
+        endcase
     end
 end
 

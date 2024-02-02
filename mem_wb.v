@@ -4,6 +4,8 @@ module mem_wb(
     input wire clk, // 时钟信号
     input wire rst, // 复位信号
 
+    input wire flush, // 流水线清除信号 
+
     // 访存阶段的结果
     input wire[`RegAddrBus] mem_wd, // 访存阶段的指令最终要写入的目的寄存器地址
     input wire mem_wreg, // 访存阶段的指令最终是否有要写入的目的寄存器
@@ -41,7 +43,19 @@ module mem_wb(
 );
 
 always @(posedge clk) begin
-    if (rst == `RstEnable) begin
+    if (rst == `RstEnable) begin // 复位
+        wb_wd <= `NOPRegAddr;
+        wb_wreg <= `WriteDisable;
+        wb_wdata <= `ZeroWord;
+        wb_hi <= `ZeroWord;
+        wb_lo <= `ZeroWord;
+        wb_whilo <= `WriteDisable;
+        wb_LLbit_we <= 1'b0;
+        wb_LLbit_value <= 1'b0;
+        wb_cp0_reg_we <= `WriteDisable;
+        wb_cp0_reg_write_addr <= 5'b00000;
+        wb_cp0_reg_data <= `ZeroWord;
+    end else if (flush == 1'b1) begin // 清除流水线
         wb_wd <= `NOPRegAddr;
         wb_wreg <= `WriteDisable;
         wb_wdata <= `ZeroWord;

@@ -17,6 +17,8 @@
 `define ChipDisable 1'b0 // 芯片禁止
 `define InterruptAssert 1'b1 // 发生中断
 `define InterruptNotAssert 1'b0 // 未发生中断
+`define TrapAssert 1'b1 
+`define TrapNotAssert 1'b0
 
 // **************************** 与具体指令有关的宏定义 ****************************
 `define EXE_AND 6'b100100 // 指令 and 的功能码
@@ -101,6 +103,21 @@
 `define EXE_LL 6'b110000 // 指令 ll 的指令码
 `define EXE_SC 6'b111000 // 指令 sc 的指令码  
 
+`define EXE_SYSCALL 6'b001100
+`define EXE_TEQ 6'b110100
+`define EXE_TEQI 5'b01100
+`define EXE_TGE 6'b110000
+`define EXE_TGEI 5'b01000
+`define EXE_TGEIU 5'b01001
+`define EXE_TGEU 6'b110001
+`define EXE_TLT 6'b110010
+`define EXE_TLTI 5'b01010
+`define EXE_TLTIU 5'b01011
+`define EXE_TLTU 6'b110011
+`define EXE_TNE 6'b110110
+`define EXE_TNEI 5'b01110
+`define EXE_ERET 32'b01000010000000000000000000011000
+
 `define EXE_SYNC 6'b001111 // 指令 sync 的功能码
 `define EXE_PREF 6'b110011 // 指令 pref 的指令码
 
@@ -179,6 +196,21 @@
 
 `define EXE_MFC0_OP 8'b01011101
 `define EXE_MTC0_OP 8'b01100000
+
+`define EXE_SYSCALL_OP 8'b00001100
+`define EXE_TEQ_OP 8'b00110100
+`define EXE_TEQI_OP 8'b01001000
+`define EXE_TGE_OP 8'b00110000
+`define EXE_TGEI_OP 8'b01000100
+`define EXE_TGEIU_OP 8'b01000101
+`define EXE_TGEU_OP 8'b00110001
+`define EXE_TLT_OP 8'b00110010
+`define EXE_TLTI_OP 8'b01000110
+`define EXE_TLTIU_OP 8'b01000111
+`define EXE_TLTU_OP 8'b00110011
+`define EXE_TNE_OP 8'b00110110
+`define EXE_TNEI_OP 8'b01001001
+`define EXE_ERET_OP 8'b01101011
 
 `define EXE_NOP_OP 8'b0000_0000
 
